@@ -8,6 +8,7 @@ import rewardRoutes from './reward.routes';
 import waiterRoutes from './waiter.routes';
 import notificationRoutes from './notification.routes';
 import analyticsRoutes from './analytics.routes';
+import paymentRoutes from './payment.routes';
 
 const router = Router();
 
@@ -20,5 +21,6 @@ router.use('/rewards', rewardRoutes);
 router.use('/waiter', waiterRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/analytics', analyticsRoutes);
+router.use('/payment', paymentRoutes);
 
 export default router;
