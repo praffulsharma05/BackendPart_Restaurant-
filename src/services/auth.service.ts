@@ -6,13 +6,13 @@ import { v4 as uuidv4 } from 'uuid';
 import { RowDataPacket } from 'mysql2';
 import bcrypt from 'bcryptjs';
 
-// Hardcoded admin credentials – in production, store hashed passwords in the DB
+// Admin credentials loaded from .env
 const ADMIN_CREDENTIALS = {
-  email: 'praffulsharma38@gmail.com',
-  passwordHash: bcrypt.hashSync('Pr@fful_213', 10),
-  name: 'Prafful Sharma',
-  phone: '+919999999999',
-  adminType: 'super_admin',
+  email: process.env.ADMIN_EMAIL || 'admin@restaurant.com',
+  passwordHash: bcrypt.hashSync(process.env.ADMIN_PASSWORD || 'admin123', 10),
+  name: process.env.ADMIN_NAME || 'Admin',
+  phone: process.env.ADMIN_PHONE || '+910000000000',
+  adminType: process.env.ADMIN_TYPE || 'super_admin',
 };
 
 export const authService = {
