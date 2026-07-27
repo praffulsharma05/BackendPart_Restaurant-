@@ -1,4 +1,3 @@
-import './types/express';
 import express, { Request, Response } from 'express';
 import http from 'http';
 import cors from 'cors';
