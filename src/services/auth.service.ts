@@ -4,8 +4,84 @@ import { generateAccessToken, generateRefreshToken } from '../utils/jwt';
 import { UserRole } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import { RowDataPacket } from 'mysql2';
+import bcrypt from 'bcryptjs';
+
+// Hardcoded admin credentials – in production, store hashed passwords in the DB
+const ADMIN_CREDENTIALS = {
+  email: 'praffulsharma38@gmail.com',
+  passwordHash: bcrypt.hashSync('Pr@fful_213', 10),
+  name: 'Prafful Sharma',
+  phone: '+919999999999',
+  adminType: 'super_admin',
+};
 
 export const authService = {
+  async adminLogin(email: string, password: string) {
+    // Validate credentials
+    if (email !== ADMIN_CREDENTIALS.email) {
+      throw new Error('Invalid email or password');
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, ADMIN_CREDENTIALS.passwordHash);
+    if (!isPasswordValid) {
+      throw new Error('Invalid email or password');
+    }
+
+    // Check if the admin user exists in the DB
+    const [rows] = await dbPool.query<RowDataPacket[]>(
+      'SELECT * FROM users WHERE email = ? AND role = ?',
+      [email, 'ADMIN']
+    );
+
+    let user: any;
+    if (rows.length === 0) {
+      // Create the admin user in the database
+      const userId = `admin_${Date.now()}`;
+      await dbPool.query(
+        'INSERT INTO users (id, phone, name, email, role, reward_points, gold_member) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [userId, ADMIN_CREDENTIALS.phone, ADMIN_CREDENTIALS.name, email, 'ADMIN', 0, false]
+      );
+      user = {
+        id: userId,
+        phone: ADMIN_CREDENTIALS.phone,
+        name: ADMIN_CREDENTIALS.name,
+        email,
+        role: 'ADMIN',
+      };
+    } else {
+      user = rows[0];
+    }
+
+    const payload = { id: user.id, phone: user.phone, role: user.role as UserRole, name: user.name };
+    const accessToken = generateAccessToken(payload);
+    const refreshToken = generateRefreshToken(payload);
+
+    // Save refresh token
+    const tokenId = uuidv4();
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7);
+
+    await dbPool.query('INSERT INTO refresh_tokens (id, user_id, token, expires_at) VALUES (?, ?, ?, ?)', [
+      tokenId,
+      user.id,
+      refreshToken,
+      expiresAt,
+    ]);
+
+    return {
+      user: {
+        id: user.id,
+        phone: user.phone,
+        name: user.name,
+        email: user.email || email,
+        role: user.role,
+        adminType: ADMIN_CREDENTIALS.adminType,
+      },
+      accessToken,
+      refreshToken,
+    };
+  },
+
   async verifyFirebaseAndLogin(firebaseToken: string, phoneInput?: string) {
     let phone = phoneInput || '+15550192';
 

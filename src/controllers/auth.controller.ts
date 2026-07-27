@@ -3,6 +3,22 @@ import { authService } from '../services/auth.service';
 import { sendSuccess, sendError } from '../utils/apiResponse';
 
 export const authController = {
+  async adminLogin(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { email, password } = req.body;
+      if (!email || !password) {
+        return sendError(res, 'Email and password are required', 400);
+      }
+      const result = await authService.adminLogin(email, password);
+      return sendSuccess(res, 'Admin login successful', result);
+    } catch (error: any) {
+      if (error.message === 'Invalid email or password') {
+        return sendError(res, 'Invalid email or password', 401);
+      }
+      next(error);
+    }
+  },
+
   async verifyFirebase(req: Request, res: Response, next: NextFunction) {
     try {
       const { firebaseToken, phone } = req.body;

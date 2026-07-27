@@ -4,6 +4,7 @@ import { authenticate } from '../middlewares/auth.middleware';
 
 const router = Router();
 
+router.post('/admin-login', authController.adminLogin);
 router.post('/verify-firebase-token', authController.verifyFirebase);
 router.get('/profile', authenticate, authController.getProfile);
 
