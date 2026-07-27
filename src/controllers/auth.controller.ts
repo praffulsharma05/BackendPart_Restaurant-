@@ -21,8 +21,8 @@ export const authController = {
 
   async verifyFirebase(req: Request, res: Response, next: NextFunction) {
     try {
-      const { firebaseToken, phone } = req.body;
-      const result = await authService.verifyFirebaseAndLogin(firebaseToken, phone);
+      const { firebaseToken, phone, password } = req.body;
+      const result = await authService.verifyFirebaseAndLogin(firebaseToken, phone, password);
       return sendSuccess(res, 'Authentication successful', result);
     } catch (error) {
       next(error);

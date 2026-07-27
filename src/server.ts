@@ -52,3 +52,21 @@ async function bootstrap() {
 bootstrap().catch((err) => {
   logger.error('Failed to start server:', err);
 });
+
+// Graceful shutdown on nodemon restart & process exit
+const gracefulShutdown = (signal: string) => {
+  logger.info(`Received ${signal}. Closing HTTP server...`);
+  httpServer.close(() => {
+    logger.info('HTTP server closed.');
+    if (signal === 'SIGUSR2') {
+      process.kill(process.pid, 'SIGUSR2');
+    } else {
+      process.exit(0);
+    }
+  });
+};
+
+process.once('SIGUSR2', () => gracefulShutdown('SIGUSR2'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+

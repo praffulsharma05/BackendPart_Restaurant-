@@ -82,8 +82,8 @@ export const authService = {
     };
   },
 
-  async verifyFirebaseAndLogin(firebaseToken: string, phoneInput?: string) {
-    let phone = phoneInput || '+15550192';
+  async verifyFirebaseAndLogin(firebaseToken: string, phoneInput?: string, password?: string) {
+    let phone = phoneInput || '+919999999999';
 
     if (firebaseInitialized && firebaseToken && firebaseToken !== 'mock_token') {
       try {
