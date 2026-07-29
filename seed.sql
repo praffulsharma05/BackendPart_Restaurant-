@@ -47,7 +47,8 @@ INSERT INTO restaurant_timings (day_of_week, open_time, close_time, is_closed) V
 INSERT INTO users (id, phone, name, email, avatar_url, role, reward_points, gold_member) VALUES
 ('u101', '+15550192', 'Alexander Wright', 'alex@luxedine.com', 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150', 'CUSTOMER', 350, TRUE),
 ('u102', '+15550481', 'Sophia Chen', 'sophia@luxedine.com', 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150', 'CUSTOMER', 120, FALSE),
-('u_admin', '+18000001', 'Restaurant Owner', 'admin@luxedine.com', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150', 'ADMIN', 1000, TRUE);
+('u_admin', '+18000001', 'Restaurant Owner', 'admin@luxedine.com', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150', 'ADMIN', 1000, TRUE),
+('u_admin2', '+919876543210', 'Prafful Sharma (Manager)', 'prafful@restaurant.com', 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150', 'ADMIN', 1000, TRUE);
 
 -- 4. Saved Vehicles
 INSERT INTO saved_vehicles (id, user_id, car_number, car_model, is_default) VALUES

@@ -8,6 +8,7 @@ export const restaurantService = {
 
     const info = infoRows[0] || {
       name: 'Luxe Dine Restaurant',
+      logo_url: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=300',
       phone: '+1 800-589-3463',
       address: '100 Gourmet Boulevard, Suite 400',
       tax_percentage: 5.0,
@@ -19,7 +20,7 @@ export const restaurantService = {
     return {
       info: {
         name: info.name,
-        logoUrl: info.logo_url,
+        logoUrl: info.logo_url || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=300',
         phone: info.phone,
         address: info.address,
         taxPercentage: Number(info.tax_percentage),
@@ -39,10 +40,11 @@ export const restaurantService = {
   },
 
   async updateRestaurantInfo(data: any) {
-    const { name, phone, address, taxPercentage, serviceChargePercentage, upiId, qrPaymentImageUrl } = data;
+    const { name, logoUrl, phone, address, taxPercentage, serviceChargePercentage, upiId, qrPaymentImageUrl } = data;
     await dbPool.query(
       `UPDATE restaurant_info SET 
         name = COALESCE(?, name),
+        logo_url = COALESCE(?, logo_url),
         phone = COALESCE(?, phone),
         address = COALESCE(?, address),
         tax_percentage = COALESCE(?, tax_percentage),
@@ -50,7 +52,7 @@ export const restaurantService = {
         upi_id = COALESCE(?, upi_id),
         qr_payment_image_url = COALESCE(?, qr_payment_image_url)
        WHERE id = 1`,
-      [name, phone, address, taxPercentage, serviceChargePercentage, upiId, qrPaymentImageUrl]
+      [name, logoUrl, phone, address, taxPercentage, serviceChargePercentage, upiId, qrPaymentImageUrl]
     );
     return this.getRestaurantDetails();
   },

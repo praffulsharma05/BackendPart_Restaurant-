@@ -13,7 +13,7 @@ USE Restaurant;
 CREATE TABLE IF NOT EXISTS restaurant_info (
     id INT PRIMARY KEY AUTO_INCREMENT,
     name VARCHAR(150) NOT NULL DEFAULT 'Luxe Dine',
-    logo_url VARCHAR(500),
+    logo_url LONGTEXT,
     phone VARCHAR(30) DEFAULT '+1 800-589-3463',
     address TEXT,
     tax_percentage DECIMAL(5,2) DEFAULT 5.00,
