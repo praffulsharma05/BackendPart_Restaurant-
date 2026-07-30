@@ -9,6 +9,11 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET || 'your_secret',
 });
 
+/**
+ *
+ * @param fileBuffer
+ * @param folder
+ */
 export async function uploadToCloudinary(fileBuffer: Buffer, folder: string = 'restaurant_menu'): Promise<string> {
   return new Promise((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(

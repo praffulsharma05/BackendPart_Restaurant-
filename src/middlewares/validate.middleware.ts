@@ -2,6 +2,10 @@ import { Request, Response, NextFunction } from 'express';
 import { ZodSchema, ZodError } from 'zod';
 import { sendError } from '../utils/apiResponse';
 
+/**
+ *
+ * @param schema
+ */
 export function validateBody(schema: ZodSchema) {
   return (req: Request, res: Response, next: NextFunction) => {
     try {

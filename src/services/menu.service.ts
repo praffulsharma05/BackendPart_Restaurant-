@@ -4,11 +4,20 @@ import { InventoryStatus } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 
 export const menuService = {
+  /**
+   *
+   */
   async getCategories() {
     const [rows] = await dbPool.query<RowDataPacket[]>('SELECT * FROM menu_categories WHERE is_active = TRUE ORDER BY display_order ASC');
     return rows;
   },
 
+  /**
+   *
+   * @param includeHidden
+   * @param categoryName
+   * @param search
+   */
   async getAllMenuItems(includeHidden: boolean = false, categoryName?: string, search?: string) {
     let sql = 'SELECT * FROM menu_items WHERE 1=1';
     const params: any[] = [];
@@ -64,6 +73,10 @@ export const menuService = {
     return result;
   },
 
+  /**
+   *
+   * @param id
+   */
   async getMenuItemById(id: string) {
     const [rows] = await dbPool.query<RowDataPacket[]>('SELECT * FROM menu_items WHERE id = ?', [id]);
     if (rows.length === 0) return null;
@@ -95,6 +108,10 @@ export const menuService = {
     };
   },
 
+  /**
+   *
+   * @param data
+   */
   async createMenuItem(data: any) {
     const id = `m_${Date.now()}`;
     const { name, description, price, category, imageUrl, isVegetarian, ingredients = [], options = [] } = data;
@@ -126,6 +143,11 @@ export const menuService = {
     return this.getMenuItemById(id);
   },
 
+  /**
+   *
+   * @param id
+   * @param data
+   */
   async updateMenuItem(id: string, data: any) {
     const { name, description, price, category, imageUrl, isVegetarian, isHidden, inventoryStatus } = data;
 
@@ -146,16 +168,30 @@ export const menuService = {
     return this.getMenuItemById(id);
   },
 
+  /**
+   *
+   * @param id
+   * @param status
+   */
   async updateInventoryStatus(id: string, status: InventoryStatus) {
     await dbPool.query('UPDATE menu_items SET inventory_status = ? WHERE id = ?', [status, id]);
     return this.getMenuItemById(id);
   },
 
+  /**
+   *
+   * @param id
+   * @param isHidden
+   */
   async toggleHideMenuItem(id: string, isHidden: boolean) {
     await dbPool.query('UPDATE menu_items SET is_hidden = ? WHERE id = ?', [isHidden, id]);
     return this.getMenuItemById(id);
   },
 
+  /**
+   *
+   * @param id
+   */
   async deleteMenuItem(id: string) {
     const [result] = await dbPool.query<ResultSetHeader>('DELETE FROM menu_items WHERE id = ?', [id]);
     return result.affectedRows > 0;

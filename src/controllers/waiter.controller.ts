@@ -4,6 +4,12 @@ import { getSocketIO } from '../websocket/socket.server';
 import { sendSuccess, sendError } from '../utils/apiResponse';
 
 export const waiterController = {
+  /**
+   *
+   * @param req
+   * @param res
+   * @param next
+   */
   async callWaiter(req: Request, res: Response, next: NextFunction) {
     try {
       const { tableNumber } = req.body;
@@ -24,6 +30,12 @@ export const waiterController = {
     }
   },
 
+  /**
+   *
+   * @param req
+   * @param res
+   * @param next
+   */
   async getPending(req: Request, res: Response, next: NextFunction) {
     try {
       const calls = await waiterService.getPendingWaiterCalls();
@@ -33,6 +45,12 @@ export const waiterController = {
     }
   },
 
+  /**
+   *
+   * @param req
+   * @param res
+   * @param next
+   */
   async attendCall(req: Request, res: Response, next: NextFunction) {
     try {
       const result = await waiterService.attendWaiterCall(req.params.id);

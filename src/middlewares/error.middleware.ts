@@ -2,6 +2,13 @@ import { Request, Response, NextFunction } from 'express';
 import { logger } from '../utils/logger';
 import { sendError } from '../utils/apiResponse';
 
+/**
+ *
+ * @param err
+ * @param req
+ * @param res
+ * @param next
+ */
 export function errorHandler(err: any, req: Request, res: Response, next: NextFunction) {
   logger.error(`[Unhandled Error] ${req.method} ${req.url}:`, err);
 

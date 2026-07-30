@@ -3,6 +3,9 @@ import { RowDataPacket } from 'mysql2';
 import { v4 as uuidv4 } from 'uuid';
 
 export const offerService = {
+  /**
+   *
+   */
   async getActiveOffers() {
     const [rows] = await dbPool.query<RowDataPacket[]>(
       'SELECT * FROM offers WHERE is_active = TRUE AND (valid_until IS NULL OR valid_until > NOW())'
@@ -21,6 +24,12 @@ export const offerService = {
     }));
   },
 
+  /**
+   *
+   * @param code
+   * @param subtotal
+   * @param userId
+   */
   async validateCouponCode(code: string, subtotal: number, userId: string) {
     const [rows] = await dbPool.query<RowDataPacket[]>(
       'SELECT * FROM offers WHERE code = ? AND is_active = TRUE AND (valid_until IS NULL OR valid_until > NOW())',
@@ -65,6 +74,10 @@ export const offerService = {
     };
   },
 
+  /**
+   *
+   * @param data
+   */
   async createOffer(data: any) {
     const id = uuidv4();
     const { code, title, description, offerType, discountPercent, discountAmount, minOrderAmount, maxDiscountAmount, validUntil } = data;

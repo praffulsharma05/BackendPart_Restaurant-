@@ -4,6 +4,11 @@ import { RowDataPacket } from 'mysql2';
 import { v4 as uuidv4 } from 'uuid';
 
 export const orderService = {
+  /**
+   *
+   * @param userId
+   * @param input
+   */
   async createOrder(userId: string, input: CreateOrderInput) {
     const connection = await dbPool.getConnection();
     try {
@@ -25,7 +30,7 @@ export const orderService = {
           throw new Error(`Dish '${menuItem.name}' is currently Sold Out.`);
         }
 
-        let itemUnitPrice = Number(menuItem.price);
+        const itemUnitPrice = Number(menuItem.price);
         let optionsTotal = 0;
         const selectedOptionsList: any[] = [];
 
@@ -158,6 +163,10 @@ export const orderService = {
     }
   },
 
+  /**
+   *
+   * @param orderId
+   */
   async getOrderById(orderId: string) {
     const [orders] = await dbPool.query<RowDataPacket[]>('SELECT * FROM orders WHERE id = ?', [orderId]);
     if (orders.length === 0) return null;
@@ -221,6 +230,12 @@ export const orderService = {
     };
   },
 
+  /**
+   *
+   * @param orderId
+   * @param status
+   * @param cancellationReason
+   */
   async updateOrderStatus(orderId: string, status: OrderStatus, cancellationReason?: string) {
     await dbPool.query(
       'UPDATE orders SET status = ?, cancellation_reason = COALESCE(?, cancellation_reason) WHERE id = ?',
@@ -245,16 +260,29 @@ export const orderService = {
     return this.getOrderById(orderId);
   },
 
+  /**
+   *
+   * @param orderId
+   * @param minutes
+   */
   async updateOrderPrepTime(orderId: string, minutes: PrepTimeMinutes) {
     await dbPool.query('UPDATE orders SET prep_time_minutes = ? WHERE id = ?', [minutes, orderId]);
     return this.getOrderById(orderId);
   },
 
+  /**
+   *
+   * @param userId
+   */
   async getUserOrders(userId: string) {
     const [rows] = await dbPool.query<RowDataPacket[]>('SELECT id FROM orders WHERE user_id = ? ORDER BY created_at DESC', [userId]);
     return Promise.all(rows.map((r) => this.getOrderById(r.id)));
   },
 
+  /**
+   *
+   * @param statusFilter
+   */
   async getAllOrders(statusFilter?: string) {
     let sql = 'SELECT id FROM orders';
     const params: any[] = [];

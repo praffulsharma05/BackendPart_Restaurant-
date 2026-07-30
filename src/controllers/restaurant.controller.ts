@@ -3,6 +3,12 @@ import { restaurantService } from '../services/restaurant.service';
 import { sendSuccess } from '../utils/apiResponse';
 
 export const restaurantController = {
+  /**
+   *
+   * @param req
+   * @param res
+   * @param next
+   */
   async getDetails(req: Request, res: Response, next: NextFunction) {
     try {
       const data = await restaurantService.getRestaurantDetails();
@@ -12,6 +18,12 @@ export const restaurantController = {
     }
   },
 
+  /**
+   *
+   * @param req
+   * @param res
+   * @param next
+   */
   async updateInfo(req: Request, res: Response, next: NextFunction) {
     try {
       const data = await restaurantService.updateRestaurantInfo(req.body);
@@ -21,6 +33,12 @@ export const restaurantController = {
     }
   },
 
+  /**
+   *
+   * @param req
+   * @param res
+   * @param next
+   */
   async uploadLogo(req: Request, res: Response, next: NextFunction) {
     try {
       if (!req.file) {

@@ -3,6 +3,12 @@ import { rewardService } from '../services/reward.service';
 import { sendSuccess, sendError } from '../utils/apiResponse';
 
 export const rewardController = {
+  /**
+   *
+   * @param req
+   * @param res
+   * @param next
+   */
   async getRewardSummary(req: Request, res: Response, next: NextFunction) {
     try {
       const userId = req.user?.id || 'u101';

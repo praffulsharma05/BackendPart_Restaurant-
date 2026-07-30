@@ -3,6 +3,12 @@ import { offerService } from '../services/offer.service';
 import { sendSuccess, sendError } from '../utils/apiResponse';
 
 export const offerController = {
+  /**
+   *
+   * @param req
+   * @param res
+   * @param next
+   */
   async getOffers(req: Request, res: Response, next: NextFunction) {
     try {
       const offers = await offerService.getActiveOffers();
@@ -12,6 +18,12 @@ export const offerController = {
     }
   },
 
+  /**
+   *
+   * @param req
+   * @param res
+   * @param next
+   */
   async validateCoupon(req: Request, res: Response, next: NextFunction) {
     try {
       const { code, subtotal } = req.body;
@@ -27,6 +39,12 @@ export const offerController = {
     }
   },
 
+  /**
+   *
+   * @param req
+   * @param res
+   * @param next
+   */
   async createOffer(req: Request, res: Response, next: NextFunction) {
     try {
       const offer = await offerService.createOffer(req.body);

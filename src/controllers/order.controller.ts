@@ -5,6 +5,12 @@ import { sendSuccess, sendError } from '../utils/apiResponse';
 import { OrderStatus, PrepTimeMinutes } from '../types';
 
 export const orderController = {
+  /**
+   *
+   * @param req
+   * @param res
+   * @param next
+   */
   async createOrder(req: Request, res: Response, next: NextFunction) {
     try {
       const userId = req.user?.id || 'u101';
@@ -24,6 +30,12 @@ export const orderController = {
     }
   },
 
+  /**
+   *
+   * @param req
+   * @param res
+   * @param next
+   */
   async getOrderById(req: Request, res: Response, next: NextFunction) {
     try {
       const order = await orderService.getOrderById(req.params.id);
@@ -34,6 +46,12 @@ export const orderController = {
     }
   },
 
+  /**
+   *
+   * @param req
+   * @param res
+   * @param next
+   */
   async updateStatus(req: Request, res: Response, next: NextFunction) {
     try {
       const { status, cancellationReason } = req.body;
@@ -60,6 +78,12 @@ export const orderController = {
     }
   },
 
+  /**
+   *
+   * @param req
+   * @param res
+   * @param next
+   */
   async updatePrepTime(req: Request, res: Response, next: NextFunction) {
     try {
       const { minutes } = req.body;
@@ -83,6 +107,12 @@ export const orderController = {
     }
   },
 
+  /**
+   *
+   * @param req
+   * @param res
+   * @param next
+   */
   async getUserOrders(req: Request, res: Response, next: NextFunction) {
     try {
       const userId = req.user?.id || 'u101';
@@ -93,6 +123,12 @@ export const orderController = {
     }
   },
 
+  /**
+   *
+   * @param req
+   * @param res
+   * @param next
+   */
   async getAllOrders(req: Request, res: Response, next: NextFunction) {
     try {
       const { status } = req.query;

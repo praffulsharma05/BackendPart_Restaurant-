@@ -1,18 +1,40 @@
 import { Request, Response, NextFunction } from 'express';
 import { restaurantService } from '../services/restaurant.service';
 import { sendSuccess } from '../utils/apiResponse';
+import { dbPool } from '../config/db';
+import { RowDataPacket } from 'mysql2';
 
 export const superAdminController = {
+  /**
+   *
+   * @param req
+   * @param res
+   * @param next
+   */
   async getDashboardStats(req: Request, res: Response, next: NextFunction) {
     try {
       const restaurants = await restaurantService.getAllRestaurants();
       const activeCount = restaurants.filter((r) => r.isActive).length;
+
+      let totalOrdersPlatform = 0;
+      let totalPlatformRevenue = 0;
+
+      try {
+        const [orderStats] = await dbPool.query<RowDataPacket[]>(
+          'SELECT COUNT(*) as count, COALESCE(SUM(total), 0) as revenue FROM orders'
+        );
+        if (orderStats.length > 0) {
+          totalOrdersPlatform = Number(orderStats[0].count || 0);
+          totalPlatformRevenue = Number(orderStats[0].revenue || 0);
+        }
+      } catch (e) {}
+
       return sendSuccess(res, 'Super Admin statistics retrieved', {
         totalRestaurants: restaurants.length,
         activeRestaurants: activeCount,
         inactiveRestaurants: restaurants.length - activeCount,
-        totalOrdersPlatform: 1248,
-        totalPlatformRevenue: 48920.00,
+        totalOrdersPlatform,
+        totalPlatformRevenue,
         restaurants,
       });
     } catch (error) {
@@ -20,6 +42,12 @@ export const superAdminController = {
     }
   },
 
+  /**
+   *
+   * @param req
+   * @param res
+   * @param next
+   */
   async getRestaurants(req: Request, res: Response, next: NextFunction) {
     try {
       const list = await restaurantService.getAllRestaurants();
@@ -29,6 +57,12 @@ export const superAdminController = {
     }
   },
 
+  /**
+   *
+   * @param req
+   * @param res
+   * @param next
+   */
   async createRestaurant(req: Request, res: Response, next: NextFunction) {
     try {
       const data = await restaurantService.createRestaurant(req.body);
@@ -38,6 +72,12 @@ export const superAdminController = {
     }
   },
 
+  /**
+   *
+   * @param req
+   * @param res
+   * @param next
+   */
   async updateRestaurantBranding(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
@@ -48,6 +88,12 @@ export const superAdminController = {
     }
   },
 
+  /**
+   *
+   * @param req
+   * @param res
+   * @param next
+   */
   async uploadLogo(req: Request, res: Response, next: NextFunction) {
     try {
       if (!req.file) {
@@ -81,6 +127,12 @@ export const superAdminController = {
     }
   },
 
+  /**
+   *
+   * @param req
+   * @param res
+   * @param next
+   */
   async setActiveRestaurant(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
@@ -91,6 +143,12 @@ export const superAdminController = {
     }
   },
 
+  /**
+   *
+   * @param req
+   * @param res
+   * @param next
+   */
   async deleteRestaurant(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;

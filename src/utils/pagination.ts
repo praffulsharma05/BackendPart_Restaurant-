@@ -15,6 +15,10 @@ export interface PaginationResult<T> {
   };
 }
 
+/**
+ *
+ * @param reqQuery
+ */
 export function parsePagination(reqQuery: any) {
   const page = Math.max(1, parseInt(reqQuery.page, 10) || 1);
   const limit = Math.min(100, Math.max(1, parseInt(reqQuery.limit, 10) || 10));

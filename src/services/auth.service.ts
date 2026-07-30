@@ -30,6 +30,11 @@ const PREDEFINED_ADMINS: Record<string, { name: string; phone: string; passwordH
 };
 
 export const authService = {
+  /**
+   *
+   * @param emailInput
+   * @param password
+   */
   async adminLogin(emailInput: string, password: string) {
     const email = (emailInput || '').toLowerCase().trim();
 
@@ -124,6 +129,12 @@ export const authService = {
     };
   },
 
+  /**
+   *
+   * @param firebaseToken
+   * @param phoneInput
+   * @param password
+   */
   async verifyFirebaseAndLogin(firebaseToken: string, phoneInput?: string, password?: string) {
     let phone = phoneInput || '+919999999999';
 
@@ -187,6 +198,10 @@ export const authService = {
     };
   },
 
+  /**
+   *
+   * @param userId
+   */
   async getUserProfile(userId: string) {
     const [users] = await dbPool.query<RowDataPacket[]>('SELECT * FROM users WHERE id = ?', [userId]);
     if (users.length === 0) return null;

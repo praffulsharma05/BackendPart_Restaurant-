@@ -38,6 +38,9 @@ initSocketIO(httpServer);
 
 const PORT = Number(process.env.PORT) || 5000;
 
+/**
+ *
+ */
 async function bootstrap() {
   await testDbConnection();
 
@@ -54,6 +57,10 @@ bootstrap().catch((err) => {
 });
 
 // Graceful shutdown on nodemon restart & process exit
+/**
+ *
+ * @param signal
+ */
 const gracefulShutdown = (signal: string) => {
   logger.info(`Received ${signal}. Closing HTTP server...`);
   httpServer.close(() => {

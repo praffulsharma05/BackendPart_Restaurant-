@@ -2,6 +2,9 @@ import { dbPool } from '../config/db';
 import { RowDataPacket } from 'mysql2';
 
 export const analyticsService = {
+  /**
+   *
+   */
   async getDashboardSummary() {
     // 1. Daily revenue (orders created today with status not Cancelled)
     const [dailyRows] = await dbPool.query<RowDataPacket[]>(
@@ -33,6 +36,10 @@ export const analyticsService = {
     };
   },
 
+  /**
+   *
+   * @param limit
+   */
   async getMostOrderedDishes(limit: number = 10) {
     const [rows] = await dbPool.query<RowDataPacket[]>(
       `SELECT menu_item_id, item_name, SUM(quantity) as totalQuantitySold, SUM(subtotal) as totalRevenueGenerated
@@ -51,6 +58,9 @@ export const analyticsService = {
     }));
   },
 
+  /**
+   *
+   */
   async getPeakOrderingHours() {
     const [rows] = await dbPool.query<RowDataPacket[]>(
       `SELECT HOUR(created_at) as hourOfDay, COUNT(*) as ordersCount
@@ -66,6 +76,9 @@ export const analyticsService = {
     }));
   },
 
+  /**
+   *
+   */
   async getCancelledOrdersAnalytics() {
     const [rows] = await dbPool.query<RowDataPacket[]>(
       `SELECT id, user_id, order_type, total, cancellation_reason, created_at

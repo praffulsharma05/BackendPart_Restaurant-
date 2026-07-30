@@ -4,6 +4,12 @@ import { uploadToCloudinary } from '../config/cloudinary';
 import { sendSuccess, sendError } from '../utils/apiResponse';
 
 export const menuController = {
+  /**
+   *
+   * @param req
+   * @param res
+   * @param next
+   */
   async getCategories(req: Request, res: Response, next: NextFunction) {
     try {
       const categories = await menuService.getCategories();
@@ -13,6 +19,12 @@ export const menuController = {
     }
   },
 
+  /**
+   *
+   * @param req
+   * @param res
+   * @param next
+   */
   async getMenuItems(req: Request, res: Response, next: NextFunction) {
     try {
       const { category, search, includeHidden } = req.query;
@@ -26,6 +38,12 @@ export const menuController = {
     }
   },
 
+  /**
+   *
+   * @param req
+   * @param res
+   * @param next
+   */
   async getMenuItemById(req: Request, res: Response, next: NextFunction) {
     try {
       const item = await menuService.getMenuItemById(req.params.id);
@@ -36,6 +54,12 @@ export const menuController = {
     }
   },
 
+  /**
+   *
+   * @param req
+   * @param res
+   * @param next
+   */
   async createMenuItem(req: Request, res: Response, next: NextFunction) {
     try {
       const item = await menuService.createMenuItem(req.body);
@@ -45,6 +69,12 @@ export const menuController = {
     }
   },
 
+  /**
+   *
+   * @param req
+   * @param res
+   * @param next
+   */
   async updateMenuItem(req: Request, res: Response, next: NextFunction) {
     try {
       const item = await menuService.updateMenuItem(req.params.id, req.body);
@@ -54,6 +84,12 @@ export const menuController = {
     }
   },
 
+  /**
+   *
+   * @param req
+   * @param res
+   * @param next
+   */
   async updateInventoryStatus(req: Request, res: Response, next: NextFunction) {
     try {
       const { status } = req.body; // 'AVAILABLE' | 'SOLD_OUT'
@@ -67,6 +103,12 @@ export const menuController = {
     }
   },
 
+  /**
+   *
+   * @param req
+   * @param res
+   * @param next
+   */
   async toggleHide(req: Request, res: Response, next: NextFunction) {
     try {
       const { isHidden } = req.body;
@@ -77,6 +119,12 @@ export const menuController = {
     }
   },
 
+  /**
+   *
+   * @param req
+   * @param res
+   * @param next
+   */
   async deleteMenuItem(req: Request, res: Response, next: NextFunction) {
     try {
       const deleted = await menuService.deleteMenuItem(req.params.id);
@@ -87,13 +135,32 @@ export const menuController = {
     }
   },
 
+  /**
+   *
+   * @param req
+   * @param res
+   * @param next
+   */
   async uploadImage(req: Request, res: Response, next: NextFunction) {
     try {
       if (!req.file) {
         return sendError(res, 'No image file uploaded', 400);
       }
-      const imageUrl = await uploadToCloudinary(req.file.buffer, 'restaurant_menu');
-      return sendSuccess(res, 'Image uploaded to Cloudinary successfully', { imageUrl });
+
+      const mime = req.file.mimetype || 'image/png';
+      const base64 = req.file.buffer.toString('base64');
+      let imageUrl = `data:${mime};base64,${base64}`;
+
+      try {
+        const cloudUrl = await uploadToCloudinary(req.file.buffer, 'restaurant_menu');
+        if (cloudUrl && !cloudUrl.includes('unsplash')) {
+          imageUrl = cloudUrl;
+        }
+      } catch (err) {
+        // Fallback to base64 data URI
+      }
+
+      return sendSuccess(res, 'Image uploaded successfully', { imageUrl });
     } catch (error) {
       next(error);
     }

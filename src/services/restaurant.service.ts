@@ -2,24 +2,41 @@ import { dbPool } from '../config/db';
 import { RowDataPacket } from 'mysql2';
 
 export const restaurantService = {
+  /**
+   *
+   */
   async getRestaurantDetails() {
     let info: any = null;
     try {
-      const [infoRows] = await dbPool.query<RowDataPacket[]>('SELECT * FROM restaurant_info LIMIT 1');
-      info = infoRows[0];
-    } catch (e) {}
+      // Priority 1: Check active non-deleted restaurant from restaurants table
+      const [activeRows] = await dbPool.query<RowDataPacket[]>(
+        'SELECT * FROM restaurants WHERE is_active = TRUE AND (is_deleted = FALSE OR is_deleted IS NULL) LIMIT 1'
+      );
+      if (activeRows.length > 0) {
+        info = activeRows[0];
+      } else {
+        // Priority 2: Fall back to restaurant_info table
+        const [infoRows] = await dbPool.query<RowDataPacket[]>('SELECT * FROM restaurant_info LIMIT 1');
+        if (infoRows.length > 0) {
+          info = infoRows[0];
+        }
+      }
+    } catch (e) {
+      // Ignore error and use default fallback
+    }
 
     if (!info) {
       info = {
-        name: 'Prafful Sharma Restaurant',
-        tagline: 'Authentic Fine Dining & Gourmet Experience',
-        logo_url: 'https://res.cloudinary.com/dekctt0su/image/upload/v1785323139/restaurant_logos/gmeqdkzewyyy9pur52lh.jpg',
-        phone: '+1 800-589-3463',
-        address: '100 Gourmet Boulevard, Suite 400',
+        name: '',
+        tagline: '',
+        logo_url: '',
+        phone: '',
+        email: '',
+        address: '',
         tax_percentage: 5.0,
         service_charge_percentage: 2.5,
-        upi_id: 'luxedine@bank',
-        qr_payment_image_url: 'https://images.unsplash.com/photo-1556742049-0a67dd35f3d7?w=500',
+        upi_id: '',
+        qr_payment_image_url: '',
       };
     }
 
@@ -27,19 +44,23 @@ export const restaurantService = {
     try {
       const [tRows] = await dbPool.query<RowDataPacket[]>('SELECT * FROM restaurant_timings');
       timingsRows = tRows;
-    } catch (e) {}
+    } catch (e) {
+      // Ignore error and use default empty array
+    }
 
     return {
       info: {
-        name: info.name || 'Prafful Sharma Restaurant',
-        tagline: info.tagline || 'Authentic Fine Dining & Gourmet Experience',
-        logoUrl: info.logo_url || 'https://res.cloudinary.com/dekctt0su/image/upload/v1785323139/restaurant_logos/gmeqdkzewyyy9pur52lh.jpg',
-        phone: info.phone || '+1 800-589-3463',
-        address: info.address || '100 Gourmet Boulevard, Suite 400',
+        id: info.id || '1',
+        name: info.name || '',
+        tagline: info.tagline || '',
+        logoUrl: info.logo_url || '',
+        phone: info.phone || '',
+        email: info.email || '',
+        address: info.address || '',
         taxPercentage: Number(info.tax_percentage || 5.0),
         serviceChargePercentage: Number(info.service_charge_percentage || 2.5),
         qrDetails: {
-          upiId: info.upi_id || 'luxedine@bank',
+          upiId: info.upi_id || '',
           qrCodeImageUrl: info.qr_payment_image_url || '',
         },
       },
@@ -52,78 +73,60 @@ export const restaurantService = {
     };
   },
 
+  /**
+   *
+   * @param data
+   */
   async updateRestaurantInfo(data: any) {
     const { name, tagline, logoUrl, phone, address, taxPercentage, serviceChargePercentage, upiId, qrPaymentImageUrl } = data;
     try {
-      await dbPool.query(
-        `UPDATE restaurant_info SET 
-          name = COALESCE(?, name),
-          tagline = COALESCE(?, tagline),
-          logo_url = COALESCE(?, logo_url),
-          phone = COALESCE(?, phone),
-          address = COALESCE(?, address),
-          tax_percentage = COALESCE(?, tax_percentage),
-          service_charge_percentage = COALESCE(?, service_charge_percentage),
-          upi_id = COALESCE(?, upi_id),
-          qr_payment_image_url = COALESCE(?, qr_payment_image_url)
-         WHERE id = 1`,
-        [name, tagline, logoUrl, phone, address, taxPercentage, serviceChargePercentage, upiId, qrPaymentImageUrl]
-      );
+      const [rows] = await dbPool.query<RowDataPacket[]>('SELECT id FROM restaurant_info LIMIT 1');
+      if (rows.length === 0) {
+        await dbPool.query(
+          `INSERT INTO restaurant_info (id, name, tagline, logo_url, phone, address, tax_percentage, service_charge_percentage, upi_id, qr_payment_image_url)
+           VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            name || '',
+            tagline || '',
+            logoUrl || '',
+            phone || '',
+            address || '',
+            taxPercentage || 5.0,
+            serviceChargePercentage || 2.5,
+            upiId || '',
+            qrPaymentImageUrl || ''
+          ]
+        );
+      } else {
+        await dbPool.query(
+          `UPDATE restaurant_info SET 
+            name = COALESCE(?, name),
+            tagline = COALESCE(?, tagline),
+            logo_url = COALESCE(?, logo_url),
+            phone = COALESCE(?, phone),
+            address = COALESCE(?, address),
+            tax_percentage = COALESCE(?, tax_percentage),
+            service_charge_percentage = COALESCE(?, service_charge_percentage),
+            upi_id = COALESCE(?, upi_id),
+            qr_payment_image_url = COALESCE(?, qr_payment_image_url)
+           WHERE id = ?`,
+          [name, tagline, logoUrl, phone, address, taxPercentage, serviceChargePercentage, upiId, qrPaymentImageUrl, rows[0].id]
+        );
+      }
     } catch (err) {
       console.error('Failed to update restaurant_info:', err);
     }
     return this.getRestaurantDetails();
   },
 
+  /**
+   *
+   */
   async getAllRestaurants() {
     try {
-      const [rows] = await dbPool.query<RowDataPacket[]>('SELECT * FROM restaurants ORDER BY created_at DESC');
-      if (rows.length === 0) {
-        return [
-          {
-            id: 'rest-101',
-            name: 'Prafful Sharma Restaurant',
-            tagline: 'Authentic Fine Dining & Gourmet Experience',
-            logoUrl: 'https://res.cloudinary.com/dekctt0su/image/upload/v1785323139/restaurant_logos/gmeqdkzewyyy9pur52lh.jpg',
-            phone: '7878606937',
-            email: 'contact@luxedine.com',
-            address: '100 Gourmet Boulevard, Downtown, Suite 400',
-            taxPercentage: 5.0,
-            serviceChargePercentage: 2.5,
-            upiId: 'luxedine@bank',
-            isActive: true,
-            createdAt: new Date().toISOString(),
-          },
-          {
-            id: 'rest-102',
-            name: 'Spice Symphony Bistro',
-            tagline: 'Exquisite Pan-Asian & Fusion Delights',
-            logoUrl: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=500',
-            phone: '9876543210',
-            email: 'info@spicesymphony.com',
-            address: '45 Culinary Street, City Center',
-            taxPercentage: 5.0,
-            serviceChargePercentage: 2.0,
-            upiId: 'spicesymphony@upi',
-            isActive: false,
-            createdAt: new Date().toISOString(),
-          },
-          {
-            id: 'rest-103',
-            name: 'La Bella Italia Pizzeria',
-            tagline: 'Authentic Wood-Fired Neapolitan Pizza',
-            logoUrl: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=500',
-            phone: '8899001122',
-            email: 'ciao@labellaitalia.com',
-            address: '12 Via Roma Way, Little Italy',
-            taxPercentage: 5.0,
-            serviceChargePercentage: 2.5,
-            upiId: 'labella@okaxis',
-            isActive: false,
-            createdAt: new Date().toISOString(),
-          }
-        ];
-      }
+      const [rows] = await dbPool.query<RowDataPacket[]>(
+        'SELECT * FROM restaurants WHERE is_deleted = FALSE OR is_deleted IS NULL ORDER BY created_at DESC'
+      );
       return rows.map(r => ({
         id: r.id,
         name: r.name,
@@ -144,24 +147,44 @@ export const restaurantService = {
     }
   },
 
+  // Requirement 1: POST API to add new restaurant data
+  /**
+   *
+   * @param data
+   */
   async createRestaurant(data: any) {
     const id = data.id || `rest-${Date.now()}`;
-    const name = data.name || 'New Restaurant';
-    const tagline = data.tagline || 'Gourmet Dining Experience';
-    const logoUrl = data.logoUrl || 'https://res.cloudinary.com/dekctt0su/image/upload/v1785323139/restaurant_logos/gmeqdkzewyyy9pur52lh.jpg';
+    const name = data.name || '';
+    const tagline = data.tagline || '';
+    const logoUrl = data.logoUrl || '';
     const phone = data.phone || '';
     const email = data.email || '';
     const address = data.address || '';
-    const taxPercentage = data.taxPercentage || 5.0;
-    const serviceChargePercentage = data.serviceChargePercentage || 2.5;
+    const taxPercentage = data.taxPercentage !== undefined ? data.taxPercentage : 5.0;
+    const serviceChargePercentage = data.serviceChargePercentage !== undefined ? data.serviceChargePercentage : 2.5;
     const upiId = data.upiId || '';
 
     try {
+      // Deactivate all existing restaurants first
+      await dbPool.query('UPDATE restaurants SET is_active = FALSE');
+
       await dbPool.query(
-        `INSERT INTO restaurants (id, name, tagline, logo_url, phone, email, address, tax_percentage, service_charge_percentage, upi_id, is_active)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE)`,
+        `INSERT INTO restaurants (id, name, tagline, logo_url, phone, email, address, tax_percentage, service_charge_percentage, upi_id, is_active, is_deleted)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE, FALSE)`,
         [id, name, tagline, logoUrl, phone, email, address, taxPercentage, serviceChargePercentage, upiId]
       );
+
+      // Sync active tenant to restaurant_info so Frontend & Admin reflect it dynamically right away
+      await this.updateRestaurantInfo({
+        name,
+        tagline,
+        logoUrl,
+        phone,
+        address,
+        taxPercentage,
+        serviceChargePercentage,
+        upiId,
+      });
     } catch (err) {
       console.error('Failed to create restaurant in DB:', err);
     }
@@ -169,35 +192,103 @@ export const restaurantService = {
     return { id, name, tagline, logoUrl, phone, email, address, taxPercentage, serviceChargePercentage, upiId, isActive: true };
   },
 
+  // Requirement 2: Partial Update API (Only send provided fields to update)
+  /**
+   *
+   * @param id
+   * @param data
+   */
   async updateRestaurantBranding(id: string, data: any) {
-    const { name, tagline, logoUrl, phone, email, address, taxPercentage, serviceChargePercentage, upiId } = data;
+    const fieldsToUpdate: string[] = [];
+    const values: any[] = [];
 
+    if (data.name !== undefined) {
+      fieldsToUpdate.push('name = ?');
+      values.push(data.name);
+    }
+    if (data.tagline !== undefined) {
+      fieldsToUpdate.push('tagline = ?');
+      values.push(data.tagline);
+    }
+    if (data.logoUrl !== undefined) {
+      fieldsToUpdate.push('logo_url = ?');
+      values.push(data.logoUrl);
+    }
+    if (data.phone !== undefined) {
+      fieldsToUpdate.push('phone = ?');
+      values.push(data.phone);
+    }
+    if (data.email !== undefined) {
+      fieldsToUpdate.push('email = ?');
+      values.push(data.email);
+    }
+    if (data.address !== undefined) {
+      fieldsToUpdate.push('address = ?');
+      values.push(data.address);
+    }
+    if (data.upiId !== undefined) {
+      fieldsToUpdate.push('upi_id = ?');
+      values.push(data.upiId);
+    }
+    if (data.taxPercentage !== undefined) {
+      fieldsToUpdate.push('tax_percentage = ?');
+      values.push(data.taxPercentage);
+    }
+    if (data.serviceChargePercentage !== undefined) {
+      fieldsToUpdate.push('service_charge_percentage = ?');
+      values.push(data.serviceChargePercentage);
+    }
+
+    if (fieldsToUpdate.length > 0) {
+      values.push(id);
+      const sql = `UPDATE restaurants SET ${fieldsToUpdate.join(', ')} WHERE id = ? AND (is_deleted = FALSE OR is_deleted IS NULL)`;
+      try {
+        await dbPool.query(sql, values);
+      } catch (err) {
+        console.error('Error updating restaurant branding:', err);
+      }
+    }
+
+    // Retrieve updated tenant record and synchronize to main restaurant_info table
     try {
-      await dbPool.query(
-        `UPDATE restaurants SET
-          name = COALESCE(?, name),
-          tagline = COALESCE(?, tagline),
-          logo_url = COALESCE(?, logo_url),
-          phone = COALESCE(?, phone),
-          email = COALESCE(?, email),
-          address = COALESCE(?, address),
-          tax_percentage = COALESCE(?, tax_percentage),
-          service_charge_percentage = COALESCE(?, service_charge_percentage),
-          upi_id = COALESCE(?, upi_id)
-         WHERE id = ?`,
-        [name, tagline, logoUrl, phone, email, address, taxPercentage, serviceChargePercentage, upiId, id]
+      const [rows] = await dbPool.query<RowDataPacket[]>(
+        'SELECT * FROM restaurants WHERE id = ? AND (is_deleted = FALSE OR is_deleted IS NULL)',
+        [id]
       );
-    } catch (err) {}
+      if (rows.length > 0) {
+        const r = rows[0];
 
-    // Synchronize into main active restaurant_info as well
-    await this.updateRestaurantInfo({ name, tagline, logoUrl, phone, address, taxPercentage, serviceChargePercentage, upiId });
+        // If updated tenant is active, update restaurant_info so Frontend & Admin see it live
+        if (r.is_active) {
+          await this.updateRestaurantInfo({
+            name: r.name,
+            tagline: r.tagline,
+            logoUrl: r.logo_url,
+            phone: r.phone,
+            address: r.address,
+            taxPercentage: r.tax_percentage,
+            serviceChargePercentage: r.service_charge_percentage,
+            upiId: r.upi_id,
+          });
+        }
+      }
+    } catch (err) {
+      // Ignore error
+    }
 
     return { id, ...data };
   },
 
+  /**
+   *
+   * @param id
+   */
   async setRestaurantActive(id: string) {
     try {
-      const [rows] = await dbPool.query<RowDataPacket[]>('SELECT * FROM restaurants WHERE id = ?', [id]);
+      const [rows] = await dbPool.query<RowDataPacket[]>(
+        'SELECT * FROM restaurants WHERE id = ? AND (is_deleted = FALSE OR is_deleted IS NULL)',
+        [id]
+      );
       if (rows.length > 0) {
         const r = rows[0];
         await dbPool.query('UPDATE restaurants SET is_active = FALSE');
@@ -214,15 +305,39 @@ export const restaurantService = {
           upiId: r.upi_id,
         });
       }
-    } catch (err) {}
+    } catch (err) {
+      // Ignore error
+    }
 
     return this.getRestaurantDetails();
   },
 
+  // Requirement 3: Soft delete API for restaurant
+  /**
+   *
+   * @param id
+   */
   async deleteRestaurant(id: string) {
     try {
-      await dbPool.query('DELETE FROM restaurants WHERE id = ?', [id]);
-    } catch (err) {}
+      // Soft Delete in database
+      await dbPool.query('UPDATE restaurants SET is_deleted = TRUE, is_active = FALSE WHERE id = ?', [id]);
+
+      // If active restaurant was deleted, activate next available tenant
+      const [activeRows] = await dbPool.query<RowDataPacket[]>(
+        'SELECT id FROM restaurants WHERE is_active = TRUE AND (is_deleted = FALSE OR is_deleted IS NULL) LIMIT 1'
+      );
+
+      if (activeRows.length === 0) {
+        const [nextAvailable] = await dbPool.query<RowDataPacket[]>(
+          'SELECT id FROM restaurants WHERE (is_deleted = FALSE OR is_deleted IS NULL) ORDER BY created_at DESC LIMIT 1'
+        );
+        if (nextAvailable.length > 0) {
+          await this.setRestaurantActive(nextAvailable[0].id);
+        }
+      }
+    } catch (err) {
+      console.error('Error soft deleting restaurant:', err);
+    }
     return { success: true, id };
   }
 };

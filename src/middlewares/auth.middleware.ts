@@ -3,6 +3,12 @@ import { verifyAccessToken } from '../utils/jwt';
 import { sendError } from '../utils/apiResponse';
 import { UserRole } from '../types';
 
+/**
+ *
+ * @param req
+ * @param res
+ * @param next
+ */
 export function authenticate(req: Request, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -20,6 +26,10 @@ export function authenticate(req: Request, res: Response, next: NextFunction) {
   next();
 }
 
+/**
+ *
+ * @param allowedRoles
+ */
 export function authorizeRoles(allowedRoles: UserRole[]) {
   return (req: Request, res: Response, next: NextFunction) => {
     if (!req.user) {

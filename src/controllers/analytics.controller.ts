@@ -3,6 +3,12 @@ import { analyticsService } from '../services/analytics.service';
 import { sendSuccess } from '../utils/apiResponse';
 
 export const analyticsController = {
+  /**
+   *
+   * @param req
+   * @param res
+   * @param next
+   */
   async getSummary(req: Request, res: Response, next: NextFunction) {
     try {
       const summary = await analyticsService.getDashboardSummary();
@@ -12,6 +18,12 @@ export const analyticsController = {
     }
   },
 
+  /**
+   *
+   * @param req
+   * @param res
+   * @param next
+   */
   async getTopDishes(req: Request, res: Response, next: NextFunction) {
     try {
       const limit = Number(req.query.limit) || 10;
@@ -22,6 +34,12 @@ export const analyticsController = {
     }
   },
 
+  /**
+   *
+   * @param req
+   * @param res
+   * @param next
+   */
   async getPeakHours(req: Request, res: Response, next: NextFunction) {
     try {
       const hours = await analyticsService.getPeakOrderingHours();
@@ -31,6 +49,12 @@ export const analyticsController = {
     }
   },
 
+  /**
+   *
+   * @param req
+   * @param res
+   * @param next
+   */
   async getCancelledOrders(req: Request, res: Response, next: NextFunction) {
     try {
       const cancelled = await analyticsService.getCancelledOrdersAnalytics();

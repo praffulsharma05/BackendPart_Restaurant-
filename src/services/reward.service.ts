@@ -2,6 +2,10 @@ import { dbPool } from '../config/db';
 import { RowDataPacket } from 'mysql2';
 
 export const rewardService = {
+  /**
+   *
+   * @param userId
+   */
   async getUserRewardSummary(userId: string) {
     const [userRows] = await dbPool.query<RowDataPacket[]>('SELECT reward_points, gold_member FROM users WHERE id = ?', [userId]);
     if (userRows.length === 0) return null;

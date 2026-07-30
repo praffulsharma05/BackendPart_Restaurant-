@@ -4,6 +4,10 @@ import { logger } from '../utils/logger';
 
 let io: SocketIOServer;
 
+/**
+ *
+ * @param httpServer
+ */
 export function initSocketIO(httpServer: HttpServer): SocketIOServer {
   io = new SocketIOServer(httpServer, {
     cors: {
@@ -42,6 +46,9 @@ export function initSocketIO(httpServer: HttpServer): SocketIOServer {
   return io;
 }
 
+/**
+ *
+ */
 export function getSocketIO(): SocketIOServer {
   if (!io) {
     throw new Error('Socket.IO has not been initialized!');

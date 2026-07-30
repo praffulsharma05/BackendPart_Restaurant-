@@ -3,6 +3,12 @@ import { authService } from '../services/auth.service';
 import { sendSuccess, sendError } from '../utils/apiResponse';
 
 export const authController = {
+  /**
+   *
+   * @param req
+   * @param res
+   * @param next
+   */
   async adminLogin(req: Request, res: Response, next: NextFunction) {
     try {
       const { email, password } = req.body;
@@ -19,6 +25,12 @@ export const authController = {
     }
   },
 
+  /**
+   *
+   * @param req
+   * @param res
+   * @param next
+   */
   async verifyFirebase(req: Request, res: Response, next: NextFunction) {
     try {
       const { firebaseToken, phone, password } = req.body;
@@ -29,6 +41,12 @@ export const authController = {
     }
   },
 
+  /**
+   *
+   * @param req
+   * @param res
+   * @param next
+   */
   async getProfile(req: Request, res: Response, next: NextFunction) {
     try {
       const userId = req.user?.id;

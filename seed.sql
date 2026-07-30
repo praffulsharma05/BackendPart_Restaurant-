@@ -25,13 +25,19 @@ TRUNCATE TABLE saved_vehicles;
 TRUNCATE TABLE refresh_tokens;
 TRUNCATE TABLE users;
 TRUNCATE TABLE restaurant_timings;
+TRUNCATE TABLE restaurants;
 TRUNCATE TABLE restaurant_info;
 
 SET FOREIGN_KEY_CHECKS = 1;
 
--- 1. Insert Restaurant Info
-INSERT INTO restaurant_info (id, name, logo_url, phone, address, tax_percentage, service_charge_percentage, upi_id, qr_payment_image_url) VALUES
-(1, 'Luxe Dine Restaurant', 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=300', '+1 800-589-3463', '100 Gourmet Boulevard, Downtown, Suite 400', 5.00, 2.50, 'luxedine@bank', 'https://images.unsplash.com/photo-1556742049-0a67dd35f3d7?w=500');
+-- 1. Insert Restaurant Info & Initial Tenants
+INSERT INTO restaurant_info (id, name, tagline, logo_url, phone, address, tax_percentage, service_charge_percentage, upi_id, qr_payment_image_url) VALUES
+(1, 'Prafful Sharma Restaurant', 'Authentic Fine Dining & Gourmet Experience', 'https://res.cloudinary.com/dekctt0su/image/upload/v1785323139/restaurant_logos/gmeqdkzewyyy9pur52lh.jpg', '7878606937', '100 Gourmet Boulevard, Downtown, Suite 400', 5.00, 2.50, 'luxedine@bank', 'https://images.unsplash.com/photo-1556742049-0a67dd35f3d7?w=500');
+
+INSERT INTO restaurants (id, name, tagline, logo_url, phone, email, address, tax_percentage, service_charge_percentage, upi_id, is_active) VALUES
+('rest-101', 'Prafful Sharma Restaurant', 'Authentic Fine Dining & Gourmet Experience', 'https://res.cloudinary.com/dekctt0su/image/upload/v1785323139/restaurant_logos/gmeqdkzewyyy9pur52lh.jpg', '7878606937', 'contact@luxedine.com', '100 Gourmet Boulevard, Downtown, Suite 400', 5.00, 2.50, 'luxedine@bank', TRUE),
+('rest-102', 'Spice Symphony Bistro', 'Exquisite Pan-Asian & Fusion Delights', 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=500', '9876543210', 'info@spicesymphony.com', '45 Culinary Street, City Center', 5.00, 2.00, 'spicesymphony@upi', FALSE),
+('rest-103', 'La Bella Italia Pizzeria', 'Authentic Wood-Fired Neapolitan Pizza', 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=500', '8899001122', 'ciao@labellaitalia.com', '12 Via Roma Way, Little Italy', 5.00, 2.50, 'labella@okaxis', FALSE);
 
 -- 2. Insert Operating Timings
 INSERT INTO restaurant_timings (day_of_week, open_time, close_time, is_closed) VALUES
@@ -62,36 +68,13 @@ INSERT INTO menu_categories (id, name, description, display_order, is_active) VA
 (3, 'Desserts', 'Decadent sweet creations and artisanal ice creams', 3, TRUE),
 (4, 'Beverages', 'Handcrafted cocktails, mocktails, and specialty drinks', 4, TRUE);
 
--- 6. Insert Menu Items (Including Paneer Tikka marked as SOLD_OUT)
-INSERT INTO menu_items (id, category_id, name, description, price, rating, category, image_url, is_vegetarian, is_hidden, inventory_status) VALUES
-('m1', 2, 'Truffle Tagliolini', 'Fresh hand-cut tagliolini tossed in black winter truffle butter and Parmigiano Reggiano.', 28.50, 4.90, 'Main Course', 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=500', TRUE, FALSE, 'AVAILABLE'),
-('m2', 1, 'Acaí Super Bowl', 'Vibrant organic acaí garnished with blueberries, wild strawberries, and almond butter.', 18.50, 4.80, 'Starters', 'https://images.unsplash.com/photo-1590301157890-4810ed352733?w=500', TRUE, FALSE, 'AVAILABLE'),
-('m3', 2, 'Signature Wagyu Burger', 'A5 Wagyu patty, caramelized onions, smoked cheddar on a toasted brioche bun.', 24.00, 4.90, 'Main Course', 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500', FALSE, FALSE, 'AVAILABLE'),
-('m4', 1, 'Paneer Tikka Royale', 'Marinated cottage cheese cubes grilled in tandoor with mint chutney.', 19.00, 4.75, 'Starters', 'https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?w=500', TRUE, FALSE, 'SOLD_OUT'),
-('m5', 3, 'Valrhona Chocolate Fondant', 'Warm molten dark chocolate fondant with Madagascar vanilla bean ice cream.', 14.00, 4.90, 'Desserts', 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=500', TRUE, FALSE, 'AVAILABLE'),
-('m6', 4, 'Artisan Smoked Old Fashioned', 'Bourbon infused with hickory smoke, Angostura bitters, and burnt orange peel.', 16.00, 4.80, 'Beverages', 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=500', TRUE, FALSE, 'AVAILABLE');
+-- 6. Menu Items (Empty default dataset - items added dynamically via Admin UI)
 
--- 7. Insert Ingredients
-INSERT INTO menu_item_ingredients (menu_item_id, ingredient_name) VALUES
-('m1', 'Tagliolini Pasta'), ('m1', 'Black Truffle'), ('m1', 'AOP Butter'),
-('m2', 'Organic Acaí'), ('m2', 'Blueberries'), ('m2', 'Almond Butter'),
-('m3', 'A5 Wagyu Beef'), ('m3', 'Brioche Bun'), ('m3', 'Smoked Cheddar'),
-('m4', 'Paneer (Cottage Cheese)'), ('m4', 'Bell Peppers'), ('m4', 'Mint Chutney'),
-('m5', 'Valrhona Chocolate'), ('m5', 'Vanilla Bean'), ('m5', 'Organic Eggs'),
-('m6', 'Bourbon'), ('m6', 'Bitters'), ('m6', 'Hickory Smoke');
+-- 7. Ingredients (Empty default dataset)
 
--- 8. Insert Customization Options
-INSERT INTO customization_options (id, menu_item_id, name, price) VALUES
-('o1', 'm1', 'Extra Truffle Shavings', 6.00),
-('o2', 'm1', 'Gluten Free Pasta', 2.00),
-('o3', 'm3', 'Extra Wagyu Patty', 10.00),
-('o4', 'm3', 'Truffle Fries Upgrade', 4.50);
+-- 8. Customization Options (Empty default dataset)
 
--- 9. Insert Offers & Coupons
-INSERT INTO offers (id, code, title, description, offer_type, discount_percent, min_order_amount, max_discount_amount, valid_until, is_active) VALUES
-('off1', 'LUXE20', '20% OFF Gourmet Dining', 'Get 20% discount on all orders above $50', 'PERCENTAGE', 20.00, 50.00, 25.00, '2026-12-31 23:59:59', TRUE),
-('off2', 'FIRSTORDER', 'First Order Special', 'Get $10 flat discount on your very first order', 'FIRST_ORDER', 0.00, 25.00, 10.00, '2026-12-31 23:59:59', TRUE),
-('off3', 'CASHBACK15', '15% Rewards Cashback', 'Earn 15% bonus reward points on dine-in', 'CASHBACK', 15.00, 30.00, 15.00, '2026-12-31 23:59:59', TRUE);
+-- 9. Offers & Coupons (Empty default dataset - created dynamically via Admin UI)
 
 -- 10. Insert Sample Orders
 INSERT INTO orders (id, user_id, order_type, subtotal, discount, tax, service_charge, reward_points_earned, reward_points_used, total, status, prep_time_minutes, payment_method, payment_status, created_at) VALUES

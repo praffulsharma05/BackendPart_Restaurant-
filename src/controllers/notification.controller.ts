@@ -3,6 +3,12 @@ import { notificationService } from '../services/notification.service';
 import { sendSuccess } from '../utils/apiResponse';
 
 export const notificationController = {
+  /**
+   *
+   * @param req
+   * @param res
+   * @param next
+   */
   async getUserNotifications(req: Request, res: Response, next: NextFunction) {
     try {
       const userId = req.user?.id || 'u101';
@@ -13,6 +19,12 @@ export const notificationController = {
     }
   },
 
+  /**
+   *
+   * @param req
+   * @param res
+   * @param next
+   */
   async markRead(req: Request, res: Response, next: NextFunction) {
     try {
       const result = await notificationService.markAsRead(req.params.id);
