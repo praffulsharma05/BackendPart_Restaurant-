@@ -8,7 +8,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_jwt_access_key_restau
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'super_secret_jwt_refresh_key_restaurant_luxe_2026';
 
 export function generateAccessToken(payload: UserPayload): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: '15m' });
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: '30d' });
 }
 
 export function generateRefreshToken(payload: UserPayload): string {
