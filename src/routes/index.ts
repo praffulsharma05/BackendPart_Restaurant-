@@ -9,11 +9,13 @@ import waiterRoutes from './waiter.routes';
 import notificationRoutes from './notification.routes';
 import analyticsRoutes from './analytics.routes';
 import paymentRoutes from './payment.routes';
+import superadminRoutes from './superadmin.routes';
 
 const router = Router();
 
 router.use('/auth', authRoutes);
 router.use('/restaurant', restaurantRoutes);
+router.use('/superadmin', superadminRoutes);
 router.use('/menu', menuRoutes);
 router.use('/orders', orderRoutes);
 router.use('/offers', offerRoutes);

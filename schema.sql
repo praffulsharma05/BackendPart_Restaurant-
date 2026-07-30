@@ -9,10 +9,11 @@ COLLATE utf8mb4_unicode_ci;
 
 USE Restaurant;
 
--- 1. Restaurant Info & QR Payment Setup
+-- 1. Restaurant Info & Multi-Tenant Setup
 CREATE TABLE IF NOT EXISTS restaurant_info (
     id INT PRIMARY KEY AUTO_INCREMENT,
     name VARCHAR(150) NOT NULL DEFAULT 'Luxe Dine',
+    tagline VARCHAR(255) DEFAULT 'Authentic Fine Dining & Gourmet Experience',
     logo_url LONGTEXT,
     phone VARCHAR(30) DEFAULT '+1 800-589-3463',
     address TEXT,
@@ -20,6 +21,24 @@ CREATE TABLE IF NOT EXISTS restaurant_info (
     service_charge_percentage DECIMAL(5,2) DEFAULT 2.50,
     upi_id VARCHAR(100) DEFAULT 'luxedine@bank',
     qr_payment_image_url VARCHAR(500),
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS restaurants (
+    id VARCHAR(36) PRIMARY KEY,
+    name VARCHAR(150) NOT NULL,
+    tagline VARCHAR(255) DEFAULT 'Fine Dining & Gourmet Service',
+    logo_url LONGTEXT,
+    phone VARCHAR(30),
+    email VARCHAR(150),
+    address TEXT,
+    tax_percentage DECIMAL(5,2) DEFAULT 5.00,
+    service_charge_percentage DECIMAL(5,2) DEFAULT 2.50,
+    upi_id VARCHAR(100),
+    qr_payment_image_url VARCHAR(500),
+    is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
