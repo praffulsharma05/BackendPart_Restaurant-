@@ -1,11 +1,11 @@
 import { Router } from 'express';
 import { orderController } from '../controllers/order.controller';
-import { authenticate, authorizeRoles } from '../middlewares/auth.middleware';
+import { authenticate, optionalAuthenticate, authorizeRoles } from '../middlewares/auth.middleware';
 
 const router = Router();
 
-router.post('/', authenticate, orderController.createOrder);
-router.get('/my-orders', authenticate, orderController.getUserOrders);
+router.post('/', optionalAuthenticate, orderController.createOrder);
+router.get('/my-orders', optionalAuthenticate, orderController.getUserOrders);
 router.get('/all', authenticate, authorizeRoles(['ADMIN', 'KITCHEN', 'WAITER']), orderController.getAllOrders);
 router.get('/:id', authenticate, orderController.getOrderById);
 

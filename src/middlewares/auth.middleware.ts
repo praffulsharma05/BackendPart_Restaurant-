@@ -26,6 +26,27 @@ export function authenticate(req: Request, res: Response, next: NextFunction) {
   next();
 }
 
+export function optionalAuthenticate(req: Request, res: Response, next: NextFunction) {
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.split(' ')[1];
+    const payload = verifyAccessToken(token);
+    if (payload) {
+      req.user = payload;
+      return next();
+    }
+  }
+
+  const guestId = (req.headers['x-guest-id'] as string) || 'guest_user_default';
+  req.user = {
+    id: guestId,
+    phone: '+91 0000000000',
+    name: 'Guest User',
+    role: 'CUSTOMER' as UserRole,
+  };
+  next();
+}
+
 /**
  *
  * @param allowedRoles

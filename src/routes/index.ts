@@ -10,6 +10,7 @@ import notificationRoutes from './notification.routes';
 import analyticsRoutes from './analytics.routes';
 import paymentRoutes from './payment.routes';
 import superadminRoutes from './superadmin.routes';
+import cartRoutes from './cart.routes';
 
 const router = Router();
 
@@ -17,6 +18,7 @@ router.use('/auth', authRoutes);
 router.use('/restaurant', restaurantRoutes);
 router.use('/superadmin', superadminRoutes);
 router.use('/menu', menuRoutes);
+router.use('/cart', cartRoutes);
 router.use('/orders', orderRoutes);
 router.use('/offers', offerRoutes);
 router.use('/rewards', rewardRoutes);
