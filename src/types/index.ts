@@ -7,7 +7,7 @@ export interface UserPayload {
   name: string;
 }
 
-export type OrderType = 'Dine In' | 'Car Order' | 'Take Away' | 'Pre Order';
+export type OrderType = 'Dine In' | 'Car Order' | 'Take Away' | 'Pre Order' | 'Delivery';
 
 export type OrderStatus = 'Pending' | 'Accepted' | 'Preparing' | 'Ready' | 'Served' | 'Completed' | 'Cancelled';
 

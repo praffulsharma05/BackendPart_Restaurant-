@@ -22,7 +22,9 @@ export const waiterController = {
       try {
         const io = getSocketIO();
         io.to('kitchen').emit('waiter:call', call);
-      } catch (err) {}
+      } catch (_err) {
+        // Ignore socket emit error
+      }
 
       return sendSuccess(res, `Waiter called to Table ${tableNumber}`, call, 201);
     } catch (error) {

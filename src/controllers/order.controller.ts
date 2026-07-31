@@ -16,16 +16,19 @@ export const orderController = {
       const userId = req.user?.id || 'u101';
       const order = await orderService.createOrder(userId, req.body);
 
-      // Real-time Socket.IO notification to kitchen room
+      // Real-time Socket.IO notification to admin & kitchen rooms
       try {
         const io = getSocketIO();
-        io.to('kitchen').emit('order:created', order);
+        io.to('kitchen').to('admin').emit('order:created', order);
+        io.emit('order:created', order);
+        io.emit('new_order', order);
       } catch (err) {
         console.warn('Socket alert error:', (err as Error).message);
       }
 
       return sendSuccess(res, 'Order placed successfully', order, 201);
     } catch (error: any) {
+      console.error('CRITICAL Order Creation Error:', error);
       return sendError(res, error.message || 'Failed to place order', 400);
     }
   },
@@ -54,20 +57,22 @@ export const orderController = {
    */
   async updateStatus(req: Request, res: Response, next: NextFunction) {
     try {
-      const { status, cancellationReason } = req.body;
+      const { status, cancellationReason, prepTimeMinutes } = req.body;
       const validStatuses: OrderStatus[] = ['Pending', 'Accepted', 'Preparing', 'Ready', 'Served', 'Completed', 'Cancelled'];
 
       if (!validStatuses.includes(status)) {
         return sendError(res, `Invalid status. Must be one of: ${validStatuses.join(', ')}`, 400);
       }
 
-      const updatedOrder = await orderService.updateOrderStatus(req.params.id, status, cancellationReason);
+      const updatedOrder = await orderService.updateOrderStatus(req.params.id, status, cancellationReason, prepTimeMinutes);
 
-      // Real-time Socket.IO notification to order room & kitchen
+      // Real-time Socket.IO notification to order room, admin & kitchen
       try {
         const io = getSocketIO();
         io.to(`order_${req.params.id}`).emit('order:status_updated', updatedOrder);
-        io.to('kitchen').emit('order:status_updated', updatedOrder);
+        io.to('kitchen').to('admin').emit('order:status_updated', updatedOrder);
+        io.emit('order:status_updated', updatedOrder);
+        io.emit('order_updated', updatedOrder);
       } catch (err) {
         console.warn('Socket alert error:', (err as Error).message);
       }
@@ -99,7 +104,9 @@ export const orderController = {
       try {
         const io = getSocketIO();
         io.to(`order_${req.params.id}`).emit('order:prep_time_updated', updatedOrder);
-      } catch (err) {}
+      } catch (_err) {
+        // Ignore socket error
+      }
 
       return sendSuccess(res, `Preparation time updated to ${minutes} mins`, updatedOrder);
     } catch (error) {

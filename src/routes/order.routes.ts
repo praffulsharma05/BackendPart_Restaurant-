@@ -7,7 +7,7 @@ const router = Router();
 router.post('/', optionalAuthenticate, orderController.createOrder);
 router.get('/my-orders', optionalAuthenticate, orderController.getUserOrders);
 router.get('/all', authenticate, authorizeRoles(['ADMIN', 'KITCHEN', 'WAITER']), orderController.getAllOrders);
-router.get('/:id', authenticate, orderController.getOrderById);
+router.get('/:id', optionalAuthenticate, orderController.getOrderById);
 
 // Owner / Kitchen endpoints
 router.patch('/:id/status', authenticate, authorizeRoles(['ADMIN', 'KITCHEN', 'WAITER']), orderController.updateStatus);

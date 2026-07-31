@@ -27,7 +27,9 @@ export const superAdminController = {
           totalOrdersPlatform = Number(orderStats[0].count || 0);
           totalPlatformRevenue = Number(orderStats[0].revenue || 0);
         }
-      } catch (e) {}
+      } catch (_e) {
+        // Fall back to 0 platform stats if table empty
+      }
 
       return sendSuccess(res, 'Super Admin statistics retrieved', {
         totalRestaurants: restaurants.length,
