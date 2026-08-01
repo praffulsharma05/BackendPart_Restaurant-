@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
 import { orderService } from '../services/order.service';
-import { getSocketIO } from '../websocket/socket.server';
 import { sendSuccess, sendError } from '../utils/apiResponse';
 import { OrderStatus, PrepTimeMinutes } from '../types';
 
@@ -16,15 +15,6 @@ export const orderController = {
       const userId = req.user?.id || 'u101';
       const order = await orderService.createOrder(userId, req.body);
 
-      // Real-time Socket.IO notification to admin & kitchen rooms
-      try {
-        const io = getSocketIO();
-        io.to('kitchen').to('admin').emit('order:created', order);
-        io.emit('order:created', order);
-        io.emit('new_order', order);
-      } catch (err) {
-        console.warn('Socket alert error:', (err as Error).message);
-      }
 
       return sendSuccess(res, 'Order placed successfully', order, 201);
     } catch (error: any) {
@@ -66,16 +56,6 @@ export const orderController = {
 
       const updatedOrder = await orderService.updateOrderStatus(req.params.id, status, cancellationReason, prepTimeMinutes);
 
-      // Real-time Socket.IO notification to order room, admin & kitchen
-      try {
-        const io = getSocketIO();
-        io.to(`order_${req.params.id}`).emit('order:status_updated', updatedOrder);
-        io.to('kitchen').to('admin').emit('order:status_updated', updatedOrder);
-        io.emit('order:status_updated', updatedOrder);
-        io.emit('order_updated', updatedOrder);
-      } catch (err) {
-        console.warn('Socket alert error:', (err as Error).message);
-      }
 
       return sendSuccess(res, `Order status updated to '${status}'`, updatedOrder);
     } catch (error) {
@@ -100,13 +80,6 @@ export const orderController = {
 
       const updatedOrder = await orderService.updateOrderPrepTime(req.params.id, Number(minutes) as PrepTimeMinutes);
 
-      // Socket update
-      try {
-        const io = getSocketIO();
-        io.to(`order_${req.params.id}`).emit('order:prep_time_updated', updatedOrder);
-      } catch (_err) {
-        // Ignore socket error
-      }
 
       return sendSuccess(res, `Preparation time updated to ${minutes} mins`, updatedOrder);
     } catch (error) {

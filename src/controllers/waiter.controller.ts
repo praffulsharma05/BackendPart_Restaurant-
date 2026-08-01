@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
 import { waiterService } from '../services/waiter.service';
-import { getSocketIO } from '../websocket/socket.server';
 import { sendSuccess, sendError } from '../utils/apiResponse';
 
 export const waiterController = {
@@ -18,13 +17,6 @@ export const waiterController = {
       const userId = req.user?.id;
       const call = await waiterService.callWaiter(tableNumber, userId);
 
-      // Real-time Socket.IO emit to kitchen & waiters
-      try {
-        const io = getSocketIO();
-        io.to('kitchen').emit('waiter:call', call);
-      } catch (_err) {
-        // Ignore socket emit error
-      }
 
       return sendSuccess(res, `Waiter called to Table ${tableNumber}`, call, 201);
     } catch (error) {
