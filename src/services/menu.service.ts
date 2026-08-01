@@ -176,7 +176,7 @@ export const menuService = {
     await dbPool.query(
       `INSERT INTO menu_items (id, category_id, name, description, price, category, image_url, is_vegetarian, is_hidden, inventory_status)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, FALSE, 'AVAILABLE')`,
-      [id, categoryId, name, description, price, category, imageUrl || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=500', isVegetarian ? 1 : 0]
+      [id, categoryId, name, description, price, category, imageUrl || '', isVegetarian ? 1 : 0]
     );
 
     for (const ing of ingredients) {

@@ -20,9 +20,8 @@ export async function uploadToCloudinary(fileBuffer: Buffer, folder: string = 'r
       { folder, resource_type: 'image' },
       (error, result) => {
         if (error) {
-          // If Cloudinary credentials are not configured, fallback to mock upload image URL
-          console.warn('⚠️ Cloudinary upload failed, returning placeholder image URL:', error.message);
-          return resolve('https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=500');
+          console.warn('⚠️ Cloudinary upload failed:', error.message);
+          return resolve('');
         }
         resolve(result?.secure_url || '');
       }
