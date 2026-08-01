@@ -33,4 +33,19 @@ export const notificationController = {
       next(error);
     }
   },
+
+  /**
+   * Delete a notification permanently
+   * @param req
+   * @param res
+   * @param next
+   */
+  async deleteNotification(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await notificationService.deleteNotification(req.params.id);
+      return sendSuccess(res, 'Notification deleted', result);
+    } catch (error) {
+      next(error);
+    }
+  },
 };

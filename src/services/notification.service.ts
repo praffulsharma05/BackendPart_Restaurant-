@@ -47,4 +47,13 @@ export const notificationService = {
     await dbPool.query('UPDATE notifications SET is_read = TRUE WHERE id = ?', [id]);
     return { id, isRead: true };
   },
+
+  /**
+   * Delete a notification by id
+   * @param id
+   */
+  async deleteNotification(id: string) {
+    await dbPool.query('DELETE FROM notifications WHERE id = ?', [id]);
+    return { id, deleted: true };
+  },
 };
