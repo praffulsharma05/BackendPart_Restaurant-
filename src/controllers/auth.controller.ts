@@ -26,17 +26,57 @@ export const authController = {
   },
 
   /**
-   *
+   * Unified login — accepts phone OR email+password
    * @param req
    * @param res
    * @param next
    */
-  async verifyFirebase(req: Request, res: Response, next: NextFunction) {
+  async login(req: Request, res: Response, next: NextFunction) {
     try {
-      const { firebaseToken, phone, password } = req.body;
-      const result = await authService.verifyFirebaseAndLogin(firebaseToken, phone, password);
-      return sendSuccess(res, 'Authentication successful', result);
-    } catch (error) {
+      const { phone, email, password, name } = req.body;
+
+      // Phone-based login (auto-register)
+      if (phone) {
+        const result = await authService.loginWithPhone(phone, name);
+        return sendSuccess(res, 'Login successful', result);
+      }
+
+      // Email-based login
+      if (email && password) {
+        const result = await authService.loginWithEmail(email, password);
+        return sendSuccess(res, 'Login successful', result);
+      }
+
+      return sendError(res, 'Please provide phone number or email with password', 400);
+    } catch (error: any) {
+      if (error.message === 'Invalid email or password') {
+        return sendError(res, 'Invalid email or password', 401);
+      }
+      if (error.message === 'Phone number is required') {
+        return sendError(res, error.message, 400);
+      }
+      next(error);
+    }
+  },
+
+  /**
+   * Refresh access token
+   * @param req
+   * @param res
+   * @param next
+   */
+  async refreshToken(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { refreshToken } = req.body;
+      if (!refreshToken) {
+        return sendError(res, 'Refresh token is required', 400);
+      }
+      const result = await authService.refreshAccessToken(refreshToken);
+      return sendSuccess(res, 'Token refreshed successfully', result);
+    } catch (error: any) {
+      if (error.message.includes('expired') || error.message.includes('Invalid') || error.message.includes('not found')) {
+        return sendError(res, error.message, 401);
+      }
       next(error);
     }
   },

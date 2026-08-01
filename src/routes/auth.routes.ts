@@ -5,7 +5,8 @@ import { authenticate, optionalAuthenticate } from '../middlewares/auth.middlewa
 const router = Router();
 
 router.post('/admin-login', authController.adminLogin);
-router.post('/verify-firebase-token', authController.verifyFirebase);
+router.post('/login', authController.login);
+router.post('/refresh-token', authController.refreshToken);
 router.get('/profile', authenticate, authController.getProfile);
 router.get('/customers', optionalAuthenticate, authController.getAllCustomers);
 

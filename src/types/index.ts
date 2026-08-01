@@ -11,7 +11,7 @@ export type OrderType = 'Dine In' | 'Car Order' | 'Take Away' | 'Pre Order' | 'D
 
 export type OrderStatus = 'Pending' | 'Accepted' | 'Preparing' | 'Ready' | 'Served' | 'Completed' | 'Cancelled';
 
-export type PrepTimeMinutes = 10 | 15 | 20 | 30 | 45;
+export type PrepTimeMinutes = number;
 
 export type InventoryStatus = 'AVAILABLE' | 'SOLD_OUT';
 

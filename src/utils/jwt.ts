@@ -12,7 +12,7 @@ const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'super_secret_jwt_r
  * @param payload
  */
 export function generateAccessToken(payload: UserPayload): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: '30d' });
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: '24h' });
 }
 
 /**

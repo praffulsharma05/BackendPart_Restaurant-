@@ -72,13 +72,13 @@ export const orderController = {
   async updatePrepTime(req: Request, res: Response, next: NextFunction) {
     try {
       const { minutes } = req.body;
-      const validTimes: PrepTimeMinutes[] = [10, 15, 20, 30, 45];
+      const numMinutes = Number(minutes);
 
-      if (!validTimes.includes(Number(minutes) as PrepTimeMinutes)) {
-        return sendError(res, 'Preparation time must be 10, 15, 20, 30, or 45 minutes.', 400);
+      if (isNaN(numMinutes) || numMinutes <= 0 || numMinutes > 180) {
+        return sendError(res, 'Preparation time must be a valid number between 1 and 180 minutes.', 400);
       }
 
-      const updatedOrder = await orderService.updateOrderPrepTime(req.params.id, Number(minutes) as PrepTimeMinutes);
+      const updatedOrder = await orderService.updateOrderPrepTime(req.params.id, numMinutes);
 
 
       return sendSuccess(res, `Preparation time updated to ${minutes} mins`, updatedOrder);

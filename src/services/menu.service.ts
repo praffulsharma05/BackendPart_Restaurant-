@@ -13,11 +13,16 @@ export const menuService = {
   },
 
   /**
-   * Ensure is_deleted column exists on menu_items table
+   * Ensure columns exist on menu_items table
    */
-  async ensureIsDeletedColumn() {
+  async ensureColumnsExist() {
     try {
       await dbPool.query("ALTER TABLE menu_items ADD COLUMN is_deleted BOOLEAN DEFAULT FALSE");
+    } catch {
+      // Ignore if column already exists
+    }
+    try {
+      await dbPool.query("ALTER TABLE menu_items ADD COLUMN prep_time_minutes INT DEFAULT 15");
     } catch {
       // Ignore if column already exists
     }
@@ -30,7 +35,7 @@ export const menuService = {
    * @param search
    */
   async getAllMenuItems(includeHidden: boolean = false, categoryName?: string, search?: string) {
-    await this.ensureIsDeletedColumn();
+    await this.ensureColumnsExist();
     let sql = 'SELECT * FROM menu_items WHERE (is_deleted IS NULL OR is_deleted = FALSE)';
     const params: any[] = [];
 
@@ -76,6 +81,7 @@ export const menuService = {
           isHidden: Boolean(item.is_hidden),
           inventoryStatus: item.inventory_status as InventoryStatus,
           isSoldOut: item.inventory_status === 'SOLD_OUT',
+          prepTimeMinutes: item.prep_time_minutes ? Number(item.prep_time_minutes) : 15,
           ingredients: ingredients.map((i) => i.ingredient_name),
           options: options.map((o) => ({ id: o.id, name: o.name, price: Number(o.price) })),
         };
@@ -89,7 +95,7 @@ export const menuService = {
    * Fetch soft-deleted / archived menu items
    */
   async getArchivedMenuItems() {
-    await this.ensureIsDeletedColumn();
+    await this.ensureColumnsExist();
     const [items] = await dbPool.query<RowDataPacket[]>(
       'SELECT * FROM menu_items WHERE is_deleted = TRUE ORDER BY created_at DESC'
     );
@@ -117,6 +123,7 @@ export const menuService = {
           isHidden: Boolean(item.is_hidden),
           inventoryStatus: item.inventory_status as InventoryStatus,
           isSoldOut: item.inventory_status === 'SOLD_OUT',
+          prepTimeMinutes: item.prep_time_minutes ? Number(item.prep_time_minutes) : 15,
           ingredients: ingredients.map((i) => i.ingredient_name),
           options: options.map((o) => ({ id: o.id, name: o.name, price: Number(o.price) })),
         };
@@ -131,6 +138,7 @@ export const menuService = {
    * @param id
    */
   async getMenuItemById(id: string) {
+    await this.ensureColumnsExist();
     const [rows] = await dbPool.query<RowDataPacket[]>('SELECT * FROM menu_items WHERE id = ?', [id]);
     if (rows.length === 0) return null;
 
@@ -156,6 +164,7 @@ export const menuService = {
       isHidden: Boolean(item.is_hidden),
       inventoryStatus: item.inventory_status as InventoryStatus,
       isSoldOut: item.inventory_status === 'SOLD_OUT',
+      prepTimeMinutes: item.prep_time_minutes ? Number(item.prep_time_minutes) : 15,
       ingredients: ingredients.map((i) => i.ingredient_name),
       options: options.map((o) => ({ id: o.id, name: o.name, price: Number(o.price) })),
     };
@@ -166,17 +175,18 @@ export const menuService = {
    * @param data
    */
   async createMenuItem(data: any) {
+    await this.ensureColumnsExist();
     const id = `m_${Date.now()}`;
-    const { name, description, price, category, imageUrl, isVegetarian, ingredients = [], options = [] } = data;
+    const { name, description, price, category, imageUrl, isVegetarian, prepTimeMinutes = 15, ingredients = [], options = [] } = data;
 
     // Get category ID
     const [cats] = await dbPool.query<RowDataPacket[]>('SELECT id FROM menu_categories WHERE name = ? LIMIT 1', [category]);
     const categoryId = cats.length > 0 ? cats[0].id : 1;
 
     await dbPool.query(
-      `INSERT INTO menu_items (id, category_id, name, description, price, category, image_url, is_vegetarian, is_hidden, inventory_status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, FALSE, 'AVAILABLE')`,
-      [id, categoryId, name, description, price, category, imageUrl || '', isVegetarian ? 1 : 0]
+      `INSERT INTO menu_items (id, category_id, name, description, price, category, image_url, is_vegetarian, is_hidden, inventory_status, prep_time_minutes)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, FALSE, 'AVAILABLE', ?)`,
+      [id, categoryId, name, description, price, category, imageUrl || '', isVegetarian ? 1 : 0, Number(prepTimeMinutes) || 15]
     );
 
     for (const ing of ingredients) {
@@ -202,7 +212,8 @@ export const menuService = {
    * @param data
    */
   async updateMenuItem(id: string, data: any) {
-    const { name, description, price, category, imageUrl, isVegetarian, isHidden, inventoryStatus } = data;
+    await this.ensureColumnsExist();
+    const { name, description, price, category, imageUrl, isVegetarian, isHidden, inventoryStatus, prepTimeMinutes } = data;
 
     await dbPool.query(
       `UPDATE menu_items SET 
@@ -213,9 +224,10 @@ export const menuService = {
         image_url = COALESCE(?, image_url),
         is_vegetarian = COALESCE(?, is_vegetarian),
         is_hidden = COALESCE(?, is_hidden),
-        inventory_status = COALESCE(?, inventory_status)
+        inventory_status = COALESCE(?, inventory_status),
+        prep_time_minutes = COALESCE(?, prep_time_minutes)
        WHERE id = ?`,
-      [name, description, price, category, imageUrl, isVegetarian, isHidden, inventoryStatus, id]
+      [name, description, price, category, imageUrl, isVegetarian, isHidden, inventoryStatus, prepTimeMinutes ? Number(prepTimeMinutes) : null, id]
     );
 
     return this.getMenuItemById(id);
@@ -245,7 +257,7 @@ export const menuService = {
    * Soft Delete a menu item
    */
   async deleteMenuItem(id: string) {
-    await this.ensureIsDeletedColumn();
+    await this.ensureColumnsExist();
     const [result] = await dbPool.query<ResultSetHeader>('UPDATE menu_items SET is_deleted = TRUE WHERE id = ?', [id]);
     return result.affectedRows > 0;
   },
@@ -254,7 +266,7 @@ export const menuService = {
    * Restore a soft-deleted menu item
    */
   async restoreMenuItem(id: string) {
-    await this.ensureIsDeletedColumn();
+    await this.ensureColumnsExist();
     const [result] = await dbPool.query<ResultSetHeader>('UPDATE menu_items SET is_deleted = FALSE WHERE id = ?', [id]);
     return result.affectedRows > 0;
   },
