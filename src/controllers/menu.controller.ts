@@ -165,4 +165,73 @@ export const menuController = {
       next(error);
     }
   },
+
+  /**
+   *
+   * @param req
+   * @param res
+   * @param next
+   */
+  async getCustomizations(req: Request, res: Response, next: NextFunction) {
+    try {
+      const options = await menuService.getCustomizationsByMenuItemId(req.params.id);
+      return sendSuccess(res, 'Customizations retrieved successfully', options);
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
+   *
+   * @param req
+   * @param res
+   * @param next
+   */
+  async addCustomization(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { name, price } = req.body;
+      if (!name || price === undefined) {
+        return sendError(res, 'Name and price are required', 400);
+      }
+      const option = await menuService.addCustomizationOption(req.params.id, { name, price: Number(price) });
+      return sendSuccess(res, 'Customization added successfully', option, 201);
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
+   *
+   * @param req
+   * @param res
+   * @param next
+   */
+  async updateCustomization(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { name, price } = req.body;
+      if (!name || price === undefined) {
+        return sendError(res, 'Name and price are required', 400);
+      }
+      const option = await menuService.updateCustomizationOption(req.params.id, req.params.customizationId, { name, price: Number(price) });
+      return sendSuccess(res, 'Customization updated successfully', option);
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
+   *
+   * @param req
+   * @param res
+   * @param next
+   */
+  async deleteCustomization(req: Request, res: Response, next: NextFunction) {
+    try {
+      const deleted = await menuService.deleteCustomizationOption(req.params.id, req.params.customizationId);
+      if (!deleted) return sendError(res, 'Customization not found', 404);
+      return sendSuccess(res, 'Customization deleted successfully');
+    } catch (error) {
+      next(error);
+    }
+  },
 };

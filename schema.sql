@@ -129,6 +129,7 @@ CREATE TABLE IF NOT EXISTS customization_options (
     menu_item_id VARCHAR(36) NOT NULL,
     name VARCHAR(100) NOT NULL,
     price DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+    is_deleted BOOLEAN DEFAULT FALSE,
     FOREIGN KEY (menu_item_id) REFERENCES menu_items(id) ON DELETE CASCADE
 );
 

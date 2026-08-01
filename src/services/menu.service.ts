@@ -48,7 +48,7 @@ export const menuService = {
           [item.id]
         );
         const [options] = await dbPool.query<RowDataPacket[]>(
-          'SELECT id, name, price FROM customization_options WHERE menu_item_id = ?',
+          'SELECT id, name, price FROM customization_options WHERE menu_item_id = ? AND is_deleted = FALSE',
           [item.id]
         );
 
@@ -87,7 +87,7 @@ export const menuService = {
       [id]
     );
     const [options] = await dbPool.query<RowDataPacket[]>(
-      'SELECT id, name, price FROM customization_options WHERE menu_item_id = ?',
+      'SELECT id, name, price FROM customization_options WHERE menu_item_id = ? AND is_deleted = FALSE',
       [id]
     );
 
@@ -194,6 +194,55 @@ export const menuService = {
    */
   async deleteMenuItem(id: string) {
     const [result] = await dbPool.query<ResultSetHeader>('DELETE FROM menu_items WHERE id = ?', [id]);
+    return result.affectedRows > 0;
+  },
+
+  /**
+   * Get all customizations for a menu item
+   */
+  async getCustomizationsByMenuItemId(menuItemId: string) {
+    const [options] = await dbPool.query<RowDataPacket[]>(
+      'SELECT id, name, price FROM customization_options WHERE menu_item_id = ? AND is_deleted = FALSE',
+      [menuItemId]
+    );
+    return options.map((o) => ({ id: o.id, name: o.name, price: Number(o.price) }));
+  },
+
+  /**
+   * Add a customization option to a menu item
+   */
+  async addCustomizationOption(menuItemId: string, data: { name: string; price: number }) {
+    const optId = uuidv4();
+    await dbPool.query('INSERT INTO customization_options (id, menu_item_id, name, price) VALUES (?, ?, ?, ?)', [
+      optId,
+      menuItemId,
+      data.name,
+      data.price,
+    ]);
+    return { id: optId, name: data.name, price: data.price };
+  },
+
+  /**
+   * Update a customization option
+   */
+  async updateCustomizationOption(menuItemId: string, customizationId: string, data: { name: string; price: number }) {
+    await dbPool.query('UPDATE customization_options SET name = ?, price = ? WHERE id = ? AND menu_item_id = ?', [
+      data.name,
+      data.price,
+      customizationId,
+      menuItemId,
+    ]);
+    return { id: customizationId, name: data.name, price: data.price };
+  },
+
+  /**
+   * Delete a customization option (Soft Delete)
+   */
+  async deleteCustomizationOption(menuItemId: string, customizationId: string) {
+    const [result] = await dbPool.query<ResultSetHeader>(
+      'UPDATE customization_options SET is_deleted = TRUE WHERE id = ? AND menu_item_id = ?',
+      [customizationId, menuItemId]
+    );
     return result.affectedRows > 0;
   },
 };

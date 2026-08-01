@@ -19,4 +19,10 @@ router.patch('/:id/inventory-status', authenticate, authorizeRoles(['ADMIN', 'KI
 router.patch('/:id/hide', authenticate, authorizeRoles(['ADMIN']), menuController.toggleHide);
 router.delete('/:id', authenticate, authorizeRoles(['ADMIN']), menuController.deleteMenuItem);
 
+// Customizations endpoints
+router.get('/:id/customizations', menuController.getCustomizations);
+router.post('/:id/customizations', authenticate, authorizeRoles(['ADMIN']), menuController.addCustomization);
+router.put('/:id/customizations/:customizationId', authenticate, authorizeRoles(['ADMIN']), menuController.updateCustomization);
+router.delete('/:id/customizations/:customizationId', authenticate, authorizeRoles(['ADMIN']), menuController.deleteCustomization);
+
 export default router;
