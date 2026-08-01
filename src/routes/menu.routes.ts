@@ -6,6 +6,7 @@ import { upload } from '../middlewares/upload.middleware';
 const router = Router();
 
 router.get('/categories', menuController.getCategories);
+router.get('/archived', authenticate, authorizeRoles(['ADMIN']), menuController.getArchivedMenuItems);
 router.get('/', menuController.getMenuItems);
 router.get('/:id', menuController.getMenuItemById);
 
@@ -17,6 +18,8 @@ router.post('/', authenticate, authorizeRoles(['ADMIN']), menuController.createM
 router.put('/:id', authenticate, authorizeRoles(['ADMIN']), menuController.updateMenuItem);
 router.patch('/:id/inventory-status', authenticate, authorizeRoles(['ADMIN', 'KITCHEN']), menuController.updateInventoryStatus);
 router.patch('/:id/hide', authenticate, authorizeRoles(['ADMIN']), menuController.toggleHide);
+router.patch('/:id/restore', authenticate, authorizeRoles(['ADMIN']), menuController.restoreMenuItem);
+router.delete('/:id/permanent', authenticate, authorizeRoles(['ADMIN']), menuController.permanentDeleteMenuItem);
 router.delete('/:id', authenticate, authorizeRoles(['ADMIN']), menuController.deleteMenuItem);
 
 // Customizations endpoints

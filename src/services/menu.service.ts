@@ -13,13 +13,25 @@ export const menuService = {
   },
 
   /**
+   * Ensure is_deleted column exists on menu_items table
+   */
+  async ensureIsDeletedColumn() {
+    try {
+      await dbPool.query("ALTER TABLE menu_items ADD COLUMN is_deleted BOOLEAN DEFAULT FALSE");
+    } catch {
+      // Ignore if column already exists
+    }
+  },
+
+  /**
    *
    * @param includeHidden
    * @param categoryName
    * @param search
    */
   async getAllMenuItems(includeHidden: boolean = false, categoryName?: string, search?: string) {
-    let sql = 'SELECT * FROM menu_items WHERE 1=1';
+    await this.ensureIsDeletedColumn();
+    let sql = 'SELECT * FROM menu_items WHERE (is_deleted IS NULL OR is_deleted = FALSE)';
     const params: any[] = [];
 
     if (!includeHidden) {
@@ -41,6 +53,47 @@ export const menuService = {
     const [items] = await dbPool.query<RowDataPacket[]>(sql, params);
 
     // Fetch options & ingredients for each dish
+    const result = await Promise.all(
+      items.map(async (item) => {
+        const [ingredients] = await dbPool.query<RowDataPacket[]>(
+          'SELECT ingredient_name FROM menu_item_ingredients WHERE menu_item_id = ?',
+          [item.id]
+        );
+        const [options] = await dbPool.query<RowDataPacket[]>(
+          'SELECT id, name, price FROM customization_options WHERE menu_item_id = ? AND is_deleted = FALSE',
+          [item.id]
+        );
+
+        return {
+          id: item.id,
+          name: item.name,
+          description: item.description,
+          price: Number(item.price),
+          rating: Number(item.rating),
+          category: item.category,
+          imageUrl: item.image_url,
+          isVegetarian: Boolean(item.is_vegetarian),
+          isHidden: Boolean(item.is_hidden),
+          inventoryStatus: item.inventory_status as InventoryStatus,
+          isSoldOut: item.inventory_status === 'SOLD_OUT',
+          ingredients: ingredients.map((i) => i.ingredient_name),
+          options: options.map((o) => ({ id: o.id, name: o.name, price: Number(o.price) })),
+        };
+      })
+    );
+
+    return result;
+  },
+
+  /**
+   * Fetch soft-deleted / archived menu items
+   */
+  async getArchivedMenuItems() {
+    await this.ensureIsDeletedColumn();
+    const [items] = await dbPool.query<RowDataPacket[]>(
+      'SELECT * FROM menu_items WHERE is_deleted = TRUE ORDER BY created_at DESC'
+    );
+
     const result = await Promise.all(
       items.map(async (item) => {
         const [ingredients] = await dbPool.query<RowDataPacket[]>(
@@ -189,10 +242,27 @@ export const menuService = {
   },
 
   /**
-   *
-   * @param id
+   * Soft Delete a menu item
    */
   async deleteMenuItem(id: string) {
+    await this.ensureIsDeletedColumn();
+    const [result] = await dbPool.query<ResultSetHeader>('UPDATE menu_items SET is_deleted = TRUE WHERE id = ?', [id]);
+    return result.affectedRows > 0;
+  },
+
+  /**
+   * Restore a soft-deleted menu item
+   */
+  async restoreMenuItem(id: string) {
+    await this.ensureIsDeletedColumn();
+    const [result] = await dbPool.query<ResultSetHeader>('UPDATE menu_items SET is_deleted = FALSE WHERE id = ?', [id]);
+    return result.affectedRows > 0;
+  },
+
+  /**
+   * Permanently delete a menu item
+   */
+  async permanentDeleteMenuItem(id: string) {
     const [result] = await dbPool.query<ResultSetHeader>('DELETE FROM menu_items WHERE id = ?', [id]);
     return result.affectedRows > 0;
   },

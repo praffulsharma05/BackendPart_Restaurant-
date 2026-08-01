@@ -120,16 +120,51 @@ export const menuController = {
   },
 
   /**
-   *
-   * @param req
-   * @param res
-   * @param next
+   * Get all archived menu items
+   */
+  async getArchivedMenuItems(req: Request, res: Response, next: NextFunction) {
+    try {
+      const items = await menuService.getArchivedMenuItems();
+      return sendSuccess(res, 'Archived menu items retrieved successfully', items);
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
+   * Soft delete a menu item (moves to archive)
    */
   async deleteMenuItem(req: Request, res: Response, next: NextFunction) {
     try {
       const deleted = await menuService.deleteMenuItem(req.params.id);
       if (!deleted) return sendError(res, 'Menu item not found', 404);
-      return sendSuccess(res, 'Menu item deleted successfully');
+      return sendSuccess(res, 'Menu item archived successfully');
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
+   * Restore an archived menu item
+   */
+  async restoreMenuItem(req: Request, res: Response, next: NextFunction) {
+    try {
+      const restored = await menuService.restoreMenuItem(req.params.id);
+      if (!restored) return sendError(res, 'Archived menu item not found', 404);
+      return sendSuccess(res, 'Menu item restored successfully');
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
+   * Permanently delete an archived menu item
+   */
+  async permanentDeleteMenuItem(req: Request, res: Response, next: NextFunction) {
+    try {
+      const deleted = await menuService.permanentDeleteMenuItem(req.params.id);
+      if (!deleted) return sendError(res, 'Archived menu item not found', 404);
+      return sendSuccess(res, 'Menu item permanently deleted');
     } catch (error) {
       next(error);
     }
