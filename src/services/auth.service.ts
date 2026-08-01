@@ -226,4 +226,33 @@ export const authService = {
       })),
     };
   },
+
+  async getAllCustomers() {
+    const [users] = await dbPool.query<RowDataPacket[]>(
+      'SELECT id, phone, name, email, avatar_url, reward_points, gold_member, created_at FROM users WHERE role = "CUSTOMER" ORDER BY created_at DESC'
+    );
+
+    return Promise.all(
+      users.map(async (u) => {
+        const [orders] = await dbPool.query<RowDataPacket[]>(
+          'SELECT COUNT(*) as count, COALESCE(SUM(total), 0) as totalSpent FROM orders WHERE user_id = ? AND status != "Cancelled"',
+          [u.id]
+        );
+        const stats = orders[0] || { count: 0, totalSpent: 0 };
+
+        return {
+          id: u.id,
+          name: u.name || 'Valued Customer',
+          email: u.email || 'customer@luxedine.com',
+          phone: u.phone,
+          avatar: u.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&q=80',
+          totalOrders: Number(stats.count) || 0,
+          totalSpent: Number(stats.totalSpent) || 0,
+          rewardPoints: u.reward_points || 0,
+          isBlocked: false,
+          joinedDate: new Date(u.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+        };
+      })
+    );
+  },
 };

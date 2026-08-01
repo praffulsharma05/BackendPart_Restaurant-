@@ -60,4 +60,13 @@ export const authController = {
       next(error);
     }
   },
+
+  async getAllCustomers(req: Request, res: Response, next: NextFunction) {
+    try {
+      const customers = await authService.getAllCustomers();
+      return sendSuccess(res, 'Customers retrieved successfully', customers);
+    } catch (error) {
+      next(error);
+    }
+  },
 };

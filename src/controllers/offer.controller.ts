@@ -53,4 +53,23 @@ export const offerController = {
       next(error);
     }
   },
+
+  /**
+   *
+   * @param req
+   * @param res
+   * @param next
+   */
+  async toggleStatus(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { isActive } = req.body;
+      if (typeof isActive !== 'boolean') {
+        return sendError(res, 'isActive must be a boolean', 400);
+      }
+      const result = await offerService.toggleStatus(req.params.id, isActive);
+      return sendSuccess(res, `Offer status updated`, result);
+    } catch (error) {
+      next(error);
+    }
+  },
 };

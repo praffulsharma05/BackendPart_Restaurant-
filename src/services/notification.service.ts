@@ -27,7 +27,7 @@ export const notificationService = {
    * @param userId
    */
   async getUserNotifications(userId: string) {
-    const [rows] = await dbPool.query<RowDataPacket[]>('SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC', [userId]);
+    const [rows] = await dbPool.query<RowDataPacket[]>('SELECT * FROM notifications WHERE user_id = ? OR user_id = "ALL" ORDER BY created_at DESC', [userId]);
     return rows.map((r) => ({
       id: r.id,
       userId: r.user_id,

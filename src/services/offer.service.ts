@@ -1,7 +1,7 @@
 import { dbPool } from '../config/db';
 import { RowDataPacket } from 'mysql2';
 import { v4 as uuidv4 } from 'uuid';
-
+import { notificationService } from './notification.service';
 export const offerService = {
   /**
    *
@@ -88,6 +88,25 @@ export const offerService = {
       [id, code.toUpperCase(), title, description, offerType, discountPercent || 0, discountAmount || 0, minOrderAmount || 0, maxDiscountAmount || 0, validUntil]
     );
 
+    try {
+      await notificationService.createNotification(
+        'ALL',
+        `New Offer: ${title}`,
+        description || `Use code ${code.toUpperCase()} on your next order!`,
+        'reward'
+      );
+    } catch (_notifErr) {}
+
     return { id, ...data };
+  },
+
+  /**
+   *
+   * @param id
+   * @param isActive
+   */
+  async toggleStatus(id: string, isActive: boolean) {
+    await dbPool.query('UPDATE offers SET is_active = ? WHERE id = ?', [isActive, id]);
+    return { id, isActive };
   },
 };

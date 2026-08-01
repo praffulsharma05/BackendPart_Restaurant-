@@ -2,6 +2,7 @@ import { dbPool } from '../config/db';
 import { CreateOrderInput, OrderStatus, PrepTimeMinutes } from '../types';
 import { RowDataPacket } from 'mysql2';
 import { v4 as uuidv4 } from 'uuid';
+import { notificationService } from './notification.service';
 
 export const orderService = {
   /**
@@ -48,12 +49,6 @@ export const orderService = {
           gold_member BOOLEAN DEFAULT FALSE,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-      `);
-
-      await dbPool.query(`
-        INSERT INTO users (id, phone, name, role, reward_points) 
-        VALUES ('u101', '+919876543210', 'Gourmet Customer', 'CUSTOMER', 100)
-        ON DUPLICATE KEY UPDATE id=id;
       `);
     } catch (_e) {
       // User table initialization fallback
@@ -337,12 +332,23 @@ export const orderService = {
       await connection.commit();
       connection.release();
 
+      let fetchedOrder: any = null;
       try {
-        const fetched = await this.getOrderById(orderId);
-        if (fetched) return fetched;
+        fetchedOrder = await this.getOrderById(orderId);
       } catch (_e) {
         // Fall back to memory object if DB re-query fails
       }
+
+      try {
+        await notificationService.createNotification(
+          targetUserId,
+          'Order Placed Successfully',
+          `Your order #${orderId.slice(0, 8).toUpperCase()} has been placed and is pending admin approval.`,
+          'order'
+        );
+      } catch (_notifErr) {}
+
+      if (fetchedOrder) return fetchedOrder;
 
       return {
         id: orderId,
@@ -464,7 +470,17 @@ export const orderService = {
       }
     }
 
-    return this.getOrderById(orderId);
+    const finalOrder = await this.getOrderById(orderId);
+    if (finalOrder) {
+      try {
+        let msg = `Your order #${orderId.slice(0, 8).toUpperCase()} status is now ${status}.`;
+        if (status === 'Cancelled') msg = `Your order was cancelled. Reason: ${cancellationReason || 'N/A'}`;
+        if (status === 'Completed') msg = 'Your order is ready! Enjoy your meal.';
+        await notificationService.createNotification(finalOrder.userId, `Order ${status}`, msg, 'order');
+      } catch (_notifErr) {}
+    }
+    
+    return finalOrder;
   },
 
   /**
