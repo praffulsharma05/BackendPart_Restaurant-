@@ -138,22 +138,43 @@ export const orderService = {
       let targetUserId = userId && userId.trim() ? userId.trim() : 'u101';
       try {
         const [existingUsers] = await connection.query<RowDataPacket[]>('SELECT id FROM users WHERE id = ?', [targetUserId]);
+        const uniquePhone = input.customerPhone || `+91${Date.now()}${Math.floor(Math.random() * 1000)}`;
+        const displayName = input.customerName || 'Gourmet Customer';
+        
         if (existingUsers.length === 0) {
-          const uniquePhone = `+91${Date.now()}${Math.floor(Math.random() * 1000)}`;
           await connection.query(
             `INSERT INTO users (id, phone, name, role, reward_points) 
-             VALUES (?, ?, 'Gourmet Customer', 'CUSTOMER', 100)
+             VALUES (?, ?, ?, 'CUSTOMER', 100)
              ON DUPLICATE KEY UPDATE id=id`,
-            [targetUserId, uniquePhone]
+            [targetUserId, uniquePhone, displayName]
           );
+        } else {
+          // If the user already exists, update their name and phone if provided
+          const updates: string[] = [];
+          const params: any[] = [];
+          if (input.customerName) {
+            updates.push('name = ?');
+            params.push(input.customerName);
+          }
+          if (input.customerPhone) {
+            updates.push('phone = ?');
+            params.push(input.customerPhone);
+          }
+          if (updates.length > 0) {
+            params.push(targetUserId);
+            await connection.query(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`, params);
+          }
         }
       } catch (_e) {
         targetUserId = 'u101';
         try {
+          const uniquePhone = input.customerPhone || '+919876543210';
+          const displayName = input.customerName || 'Gourmet Customer';
           await connection.query(
             `INSERT INTO users (id, phone, name, role, reward_points) 
-             VALUES ('u101', '+919876543210', 'Gourmet Customer', 'CUSTOMER', 100)
-             ON DUPLICATE KEY UPDATE id=id`
+             VALUES ('u101', ?, ?, 'CUSTOMER', 100)
+             ON DUPLICATE KEY UPDATE id=id`,
+            [uniquePhone, displayName]
           );
         } catch (_ignore) {}
       }
@@ -161,6 +182,7 @@ export const orderService = {
       const orderId = `ord_${Date.now()}`;
       let subtotal = 0;
       const processedItems: any[] = [];
+      let maxPrepTime = 15;
 
       if (!input || !Array.isArray(input.items) || input.items.length === 0) {
         throw new Error('No items in cart to place order');
@@ -187,7 +209,13 @@ export const orderService = {
             name: itemInput.name || 'Dish Item',
             price: itemInput.unitPrice || 0,
             inventory_status: 'AVAILABLE',
+            prep_time_minutes: 15,
           };
+        }
+
+        const itemPrepMinutes = menuItem.prep_time_minutes ? Number(menuItem.prep_time_minutes) : 15;
+        if (itemPrepMinutes > maxPrepTime) {
+          maxPrepTime = itemPrepMinutes;
         }
 
         if (menuItem.inventory_status === 'SOLD_OUT') {
@@ -278,7 +306,7 @@ export const orderService = {
       const rewardPointsEarned = Math.floor(total);
 
       // Default estimated preparation time
-      const prepTimeMinutes = 20;
+      const prepTimeMinutes = maxPrepTime;
 
       const safeOrderType = input.orderType || 'Pickup';
       const safePaymentMethod = input.paymentMethod || 'UPI';
@@ -498,6 +526,95 @@ export const orderService = {
   async updateOrderPrepTime(orderId: string, minutes: PrepTimeMinutes) {
     await dbPool.query('UPDATE orders SET prep_time_minutes = ? WHERE id = ?', [minutes, orderId]);
     return this.getOrderById(orderId);
+  },
+
+  async partialRejectOrder(orderId: string, rejectedItemIds: string[]) {
+    const connection = await dbPool.getConnection();
+    try {
+      await connection.beginTransaction();
+
+      const [orders] = await connection.query<RowDataPacket[]>('SELECT * FROM orders WHERE id = ?', [orderId]);
+      if (orders.length === 0) {
+        throw new Error('Order not found');
+      }
+      const order = orders[0];
+
+      const [itemsToReject] = await connection.query<RowDataPacket[]>(
+        'SELECT * FROM order_items WHERE order_id = ? AND id IN (?)',
+        [orderId, rejectedItemIds]
+      );
+
+      if (itemsToReject.length === 0) {
+        throw new Error('No valid items selected for rejection');
+      }
+
+      await connection.query('DELETE FROM order_items WHERE order_id = ? AND id IN (?)', [orderId, rejectedItemIds]);
+      await connection.query('DELETE FROM order_item_options WHERE order_item_id IN (?)', [rejectedItemIds]);
+
+      const [remainingItems] = await connection.query<RowDataPacket[]>(
+        'SELECT * FROM order_items WHERE order_id = ?',
+        [orderId]
+      );
+
+      let newSubtotal = 0;
+      for (const item of remainingItems) {
+        newSubtotal += Number(item.subtotal);
+      }
+
+      let newDiscount = 0;
+      if (order.coupon_code) {
+        const [offerRows] = await connection.query<RowDataPacket[]>(
+          'SELECT * FROM offers WHERE code = ?',
+          [order.coupon_code]
+        );
+        if (offerRows.length > 0) {
+          const offer = offerRows[0];
+          if (newSubtotal >= Number(offer.min_order_amount)) {
+            if (offer.offer_type === 'PERCENTAGE') {
+              newDiscount = (newSubtotal * Number(offer.discount_percent)) / 100;
+              if (offer.max_discount_amount > 0 && newDiscount > Number(offer.max_discount_amount)) {
+                newDiscount = Number(offer.max_discount_amount);
+              }
+            } else if (offer.offer_type === 'FLAT' || offer.offer_type === 'FIRST_ORDER') {
+              newDiscount = Number(offer.discount_amount);
+            }
+          }
+        }
+      }
+
+      const newTax = (newSubtotal - newDiscount) * 0.05;
+      const newServiceCharge = (newSubtotal - newDiscount) * 0.025;
+      const newTotal = Math.max(0, newSubtotal - newDiscount + newTax + newServiceCharge);
+
+      const refundAmount = Number(order.total) - newTotal;
+
+      await connection.query(
+        `UPDATE orders 
+         SET subtotal = ?, discount = ?, tax = ?, service_charge = ?, total = ?, status = 'Accepted' 
+         WHERE id = ?`,
+        [newSubtotal, newDiscount, newTax, newServiceCharge, newTotal, orderId]
+      );
+
+      await connection.commit();
+      connection.release();
+
+      const itemNames = itemsToReject.map(i => i.item_name).join(', ');
+      const notifyMsg = `Partially Accepted: '${itemNames}' was/were out of stock. A refund of ₹${refundAmount.toFixed(2)} will be processed manually.`;
+      try {
+        await notificationService.createNotification(
+          order.user_id,
+          'Order Partially Accepted',
+          notifyMsg,
+          'order'
+        );
+      } catch (_e) {}
+
+      return this.getOrderById(orderId);
+    } catch (error) {
+      await connection.rollback();
+      connection.release();
+      throw error;
+    }
   },
 
   /**

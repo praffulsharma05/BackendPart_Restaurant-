@@ -159,4 +159,17 @@ export const authController = {
       next(error);
     }
   },
+
+  async deleteCustomer(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const result = await authService.deleteCustomer(id);
+      if (!result) {
+        return sendError(res, 'Customer not found or already deleted', 404);
+      }
+      return sendSuccess(res, 'Customer and all associated data deleted successfully');
+    } catch (error) {
+      next(error);
+    }
+  },
 };

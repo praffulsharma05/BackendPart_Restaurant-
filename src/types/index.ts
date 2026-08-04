@@ -47,4 +47,6 @@ export interface CreateOrderInput {
   carDetails?: CarFulfillmentInput;
   dineInDetails?: DineInFulfillmentInput;
   preOrderDetails?: PreOrderFulfillmentInput;
+  customerName?: string;
+  customerPhone?: string;
 }

@@ -13,5 +13,6 @@ router.put('/profile', authenticate, authController.updateProfile);
 router.post('/upload-avatar', authenticate, upload.single('avatar'), authController.uploadAvatar);
 router.get('/customers', optionalAuthenticate, authController.getAllCustomers);
 router.patch('/customers/:id/block', optionalAuthenticate, authController.toggleBlockCustomer);
+router.delete('/customers/:id', optionalAuthenticate, authController.deleteCustomer);
 
 export default router;

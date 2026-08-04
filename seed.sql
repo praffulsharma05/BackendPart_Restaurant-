@@ -133,7 +133,10 @@ INSERT INTO menu_items (id, category_id, name, category, price, description, ima
 
 -- 8. Customization Options (Empty default dataset)
 
--- 9. Offers & Coupons (Empty default dataset - created dynamically via Admin UI)
+-- 9. Offers & Coupons
+INSERT INTO offers (id, code, title, description, offer_type, discount_percent, discount_amount, min_order_amount, max_discount_amount, valid_until, is_active) VALUES
+('off_db_1', 'FESTIVE50', 'Festival Delight', 'Get 50% OFF up to ₹150 on your order!', 'PERCENTAGE', 50.00, 0.00, 250.00, 150.00, '2026-12-31 23:59:59', TRUE),
+('off_db_2', 'LUXE40', 'Meals on Wheels Special', 'Enjoy 40% OFF today on all menu items.', 'PERCENTAGE', 40.00, 0.00, 200.00, 100.00, '2026-12-31 23:59:59', TRUE);
 
 -- 10. Insert Sample Orders
 INSERT INTO orders (id, user_id, order_type, subtotal, discount, tax, service_charge, reward_points_earned, reward_points_used, total, status, prep_time_minutes, payment_method, payment_status, created_at) VALUES

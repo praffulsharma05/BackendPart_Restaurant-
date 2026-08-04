@@ -87,6 +87,20 @@ export const orderController = {
     }
   },
 
+  async partialReject(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { rejectedItemIds } = req.body;
+      if (!Array.isArray(rejectedItemIds) || rejectedItemIds.length === 0) {
+        return sendError(res, 'rejectedItemIds array is required', 400);
+      }
+
+      const updatedOrder = await orderService.partialRejectOrder(req.params.id, rejectedItemIds);
+      return sendSuccess(res, 'Order partially rejected/accepted successfully', updatedOrder);
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to partially reject order', 400);
+    }
+  },
+
   /**
    *
    * @param req

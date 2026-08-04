@@ -68,4 +68,13 @@ export const restaurantController = {
       next(error);
     }
   },
+
+  getTables(req: Request, res: Response) {
+    const tables = Array.from({ length: 30 }, (_, i) => ({
+      id: `t${i + 1}`,
+      tableNumber: `Table ${i + 1}`,
+      status: 'Available',
+    }));
+    return res.json({ success: true, data: tables });
+  },
 };

@@ -415,4 +415,51 @@ export const authService = {
 
     return this.getUserProfile(userId);
   },
+
+  async deleteCustomer(userId: string) {
+    const connection = await dbPool.getConnection();
+    try {
+      await connection.beginTransaction();
+
+      // Delete from refresh_tokens
+      await connection.query('DELETE FROM refresh_tokens WHERE user_id = ?', [userId]);
+      // Delete from cart_items
+      await connection.query('DELETE FROM cart_items WHERE user_id = ?', [userId]);
+
+      // Let's get order ids for the user
+      const [userOrders] = await connection.query<RowDataPacket[]>('SELECT id FROM orders WHERE user_id = ?', [userId]);
+      const orderIds = userOrders.map((o) => o.id);
+
+      if (orderIds.length > 0) {
+        // Delete from order_fulfillment_car
+        await connection.query('DELETE FROM order_fulfillment_car WHERE order_id IN (?)', [orderIds]);
+        // Delete from order_fulfillment_dine_in
+        await connection.query('DELETE FROM order_fulfillment_dine_in WHERE order_id IN (?)', [orderIds]);
+        // Delete from order_fulfillment_pre_order
+        await connection.query('DELETE FROM order_fulfillment_pre_order WHERE order_id IN (?)', [orderIds]);
+        // Delete from order_items
+        await connection.query('DELETE FROM order_items WHERE order_id IN (?)', [orderIds]);
+        // Delete from reward_transactions
+        await connection.query('DELETE FROM reward_transactions WHERE order_id IN (?)', [orderIds]);
+        // Delete from orders
+        await connection.query('DELETE FROM orders WHERE user_id = ?', [userId]);
+      }
+
+      // Delete reward transactions without order_id
+      await connection.query('DELETE FROM reward_transactions WHERE user_id = ?', [userId]);
+      // Delete saved vehicles
+      await connection.query('DELETE FROM saved_vehicles WHERE user_id = ?', [userId]);
+
+      // Finally delete user
+      const [result] = await connection.query('DELETE FROM users WHERE id = ?', [userId]);
+
+      await connection.commit();
+      return (result as any).affectedRows > 0;
+    } catch (err) {
+      await connection.rollback();
+      throw err;
+    } finally {
+      connection.release();
+    }
+  },
 };

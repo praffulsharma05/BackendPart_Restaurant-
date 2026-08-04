@@ -27,11 +27,21 @@ export const menuController = {
    */
   async getMenuItems(req: Request, res: Response, next: NextFunction) {
     try {
-      const { category, search, includeHidden } = req.query;
+      const { category, search, includeHidden, minRating, priceRange, spiceLevel, sortBy } = req.query;
       const isAdmin = req.user?.role === 'ADMIN' || req.user?.role === 'KITCHEN';
       const showHidden = isAdmin && includeHidden === 'true';
 
-      const items = await menuService.getAllMenuItems(showHidden, category as string, search as string);
+      const items = await menuService.getAllMenuItems(
+        showHidden,
+        category as string,
+        search as string,
+        {
+          minRating: minRating ? Number(minRating) : undefined,
+          priceRange: priceRange as string,
+          spiceLevel: spiceLevel as string,
+          sortBy: sortBy as string,
+        }
+      );
       return sendSuccess(res, 'Menu items retrieved successfully', items);
     } catch (error) {
       next(error);
