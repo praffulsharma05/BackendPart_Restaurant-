@@ -11,14 +11,17 @@ export const waiterController = {
    */
   async callWaiter(req: Request, res: Response, next: NextFunction) {
     try {
-      const { tableNumber } = req.body;
-      if (!tableNumber) return sendError(res, 'Table number is required', 400);
+      const { tableNumber, tableOrCarInfo } = req.body;
+      const targetTable = tableNumber || tableOrCarInfo;
+      if (!targetTable) {
+        return sendError(res, 'Table number or location info is required', 400);
+      }
 
       const userId = req.user?.id;
-      const call = await waiterService.callWaiter(tableNumber, userId);
+      const call = await waiterService.callWaiter(targetTable, userId);
 
 
-      return sendSuccess(res, `Waiter called to Table ${tableNumber}`, call, 201);
+      return sendSuccess(res, `Waiter called to ${targetTable}`, call, 201);
     } catch (error) {
       next(error);
     }
