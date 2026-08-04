@@ -344,31 +344,45 @@ export const authService = {
   },
 
   async getAllCustomers() {
+    try {
+      await dbPool.query('ALTER TABLE users ADD COLUMN is_blocked BOOLEAN DEFAULT FALSE');
+    } catch (_e) {}
+
     const [users] = await dbPool.query<RowDataPacket[]>(
-      'SELECT id, phone, name, email, avatar_url, reward_points, gold_member, created_at FROM users WHERE role = "CUSTOMER" ORDER BY created_at DESC'
+      'SELECT id, phone, name, email, avatar_url, reward_points, gold_member, is_blocked, created_at FROM users WHERE role = "CUSTOMER" ORDER BY created_at DESC'
     );
 
     return Promise.all(
       users.map(async (u) => {
         const [orders] = await dbPool.query<RowDataPacket[]>(
-          'SELECT COUNT(*) as count, COALESCE(SUM(total), 0) as totalSpent FROM orders WHERE user_id = ? AND status != "Cancelled"',
+          'SELECT COUNT(*) as count, COALESCE(SUM(total), 0) as totalSpent, MAX(created_at) as lastOrderDate FROM orders WHERE user_id = ? AND status != "Cancelled"',
           [u.id]
         );
-        const stats = orders[0] || { count: 0, totalSpent: 0 };
+        const stats = orders[0] || { count: 0, totalSpent: 0, lastOrderDate: null };
 
         return {
           id: u.id,
           name: u.name || 'Valued Customer',
-          email: u.email || 'customer@luxedine.com',
+          email: u.email || 'N/A',
           phone: u.phone,
-          avatar: u.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&q=80',
+          avatar: u.avatar_url || '',
           totalOrders: Number(stats.count) || 0,
           totalSpent: Number(stats.totalSpent) || 0,
           rewardPoints: u.reward_points || 0,
-          isBlocked: false,
+          isBlocked: Boolean(u.is_blocked),
           joinedDate: new Date(u.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+          lastOrderDate: stats.lastOrderDate ? new Date(stats.lastOrderDate).toLocaleDateString() : 'No orders yet',
         };
       })
     );
+  },
+
+  async toggleBlockCustomer(userId: string, isBlocked: boolean) {
+    try {
+      await dbPool.query('ALTER TABLE users ADD COLUMN is_blocked BOOLEAN DEFAULT FALSE');
+    } catch (_e) {}
+
+    await dbPool.query('UPDATE users SET is_blocked = ? WHERE id = ?', [isBlocked, userId]);
+    return { id: userId, isBlocked };
   },
 };

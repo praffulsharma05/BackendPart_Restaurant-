@@ -109,4 +109,15 @@ export const authController = {
       next(error);
     }
   },
+
+  async toggleBlockCustomer(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const { isBlocked } = req.body;
+      const result = await authService.toggleBlockCustomer(id, Boolean(isBlocked));
+      return sendSuccess(res, `Customer status updated successfully`, result);
+    } catch (error) {
+      next(error);
+    }
+  },
 };

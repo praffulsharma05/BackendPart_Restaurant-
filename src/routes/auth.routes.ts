@@ -9,5 +9,6 @@ router.post('/login', authController.login);
 router.post('/refresh-token', authController.refreshToken);
 router.get('/profile', authenticate, authController.getProfile);
 router.get('/customers', optionalAuthenticate, authController.getAllCustomers);
+router.patch('/customers/:id/block', optionalAuthenticate, authController.toggleBlockCustomer);
 
 export default router;

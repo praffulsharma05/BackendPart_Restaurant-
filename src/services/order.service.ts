@@ -14,7 +14,7 @@ export const orderService = {
         CREATE TABLE IF NOT EXISTS orders (
           id VARCHAR(50) PRIMARY KEY,
           user_id VARCHAR(50) NOT NULL,
-          order_type VARCHAR(50) NOT NULL DEFAULT 'Delivery',
+          order_type VARCHAR(50) NOT NULL DEFAULT 'Pickup',
           subtotal DECIMAL(10,2) NOT NULL DEFAULT 0.00,
           discount DECIMAL(10,2) NOT NULL DEFAULT 0.00,
           tax DECIMAL(10,2) NOT NULL DEFAULT 0.00,
@@ -273,7 +273,7 @@ export const orderService = {
       // Default estimated preparation time
       const prepTimeMinutes = 20;
 
-      const safeOrderType = input.orderType || 'Delivery';
+      const safeOrderType = input.orderType || 'Pickup';
       const safePaymentMethod = input.paymentMethod || 'UPI';
 
       // 5. Insert Order Header
