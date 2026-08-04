@@ -31,38 +31,6 @@ export const menuService = {
     } catch {
       // Ignore if column already exists
     }
-    try {
-      const categoriesToEnsure = [
-        { name: 'Starters', desc: 'Delicious starters and snacks' },
-        { name: 'Main Course', desc: 'Satisfying main courses' },
-        { name: 'Desserts', desc: 'Sweet treats and desserts' },
-        { name: 'Beverages', desc: 'Refreshing drinks and beverages' }
-      ];
-      for (const cat of categoriesToEnsure) {
-        const [existing] = await dbPool.query<RowDataPacket[]>('SELECT id FROM menu_categories WHERE name = ?', [cat.name]);
-        if (existing.length === 0) {
-          await dbPool.query('INSERT INTO menu_categories (name, description, display_order, is_active) VALUES (?, ?, 0, TRUE)', [cat.name, cat.desc]);
-        }
-      }
-
-      // Migrate existing items categorized under old tandoori/momos/soup/etc to Starters
-      await dbPool.query(`
-        UPDATE menu_items 
-        SET category = 'Starters', 
-            category_id = (SELECT id FROM menu_categories WHERE name = 'Starters' LIMIT 1)
-        WHERE category IN ('Non Veg Snacks', 'Non Veg Platter', 'Non Veg Roll', 'Momos', 'Veg Snacks', 'Veg Rolls', 'Soup')
-      `);
-
-      // Migrate existing items categorized under old biryani/breads/party pack to Main Course
-      await dbPool.query(`
-        UPDATE menu_items 
-        SET category = 'Main Course', 
-            category_id = (SELECT id FROM menu_categories WHERE name = 'Main Course' LIMIT 1)
-        WHERE category IN ('Main Course', 'Biryani', 'Party Pack', 'Breads')
-      `);
-    } catch (_err) {
-      // Silently handle error
-    }
   },
 
   /**
