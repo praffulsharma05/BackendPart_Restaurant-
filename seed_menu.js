@@ -17,10 +17,12 @@ async function seedMenu() {
 
     // 1. Delete all existing menu data
     console.log('🗑️  Clearing existing menu data...');
+    await conn.query('SET FOREIGN_KEY_CHECKS = 0');
     await conn.query('DELETE FROM customization_options');
     await conn.query('DELETE FROM menu_item_ingredients');
     await conn.query('DELETE FROM menu_items');
     await conn.query('DELETE FROM menu_categories');
+    await conn.query('SET FOREIGN_KEY_CHECKS = 1');
     console.log('✅ All existing menu data cleared');
 
     // 2. Insert categories with proper display order
