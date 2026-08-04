@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { authService } from '../services/auth.service';
+import { uploadToCloudinary } from '../config/cloudinary';
 import { sendSuccess, sendError } from '../utils/apiResponse';
 
 export const authController = {
@@ -116,6 +117,44 @@ export const authController = {
       const { isBlocked } = req.body;
       const result = await authService.toggleBlockCustomer(id, Boolean(isBlocked));
       return sendSuccess(res, `Customer status updated successfully`, result);
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async updateProfile(req: Request, res: Response, next: NextFunction) {
+    try {
+      const userId = req.user?.id;
+      if (!userId) return sendError(res, 'Unauthorized', 401);
+
+      const { name, phone, email, avatarUrl } = req.body;
+      const profile = await authService.updateProfile(userId, { name, phone, email, avatarUrl });
+      return sendSuccess(res, 'Profile updated successfully', profile);
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async uploadAvatar(req: Request, res: Response, next: NextFunction) {
+    try {
+      if (!req.file) {
+        return sendError(res, 'No avatar file uploaded', 400);
+      }
+
+      const mime = req.file.mimetype || 'image/png';
+      const base64 = req.file.buffer.toString('base64');
+      let avatarUrl = `data:${mime};base64,${base64}`;
+
+      try {
+        const cloudUrl = await uploadToCloudinary(req.file.buffer, 'user_avatars');
+        if (cloudUrl && !cloudUrl.includes('unsplash')) {
+          avatarUrl = cloudUrl;
+        }
+      } catch (err) {
+        // Fallback to base64 data URI
+      }
+
+      return sendSuccess(res, 'Avatar uploaded successfully', { avatarUrl });
     } catch (error) {
       next(error);
     }

@@ -6,10 +6,28 @@ export const offerService = {
   /**
    *
    */
-  async getActiveOffers() {
-    const [rows] = await dbPool.query<RowDataPacket[]>(
-      'SELECT * FROM offers WHERE is_active = TRUE AND (valid_until IS NULL OR valid_until > NOW())'
-    );
+  async getActiveOffers(all: boolean = false) {
+    let sql = 'SELECT * FROM offers';
+    if (!all) {
+      sql += ' WHERE is_active = TRUE AND (valid_until IS NULL OR valid_until > NOW())';
+    }
+    const [rows] = await dbPool.query<RowDataPacket[]>(sql);
+
+    // Query coupon usage counts
+    let usageMap = new Map<string, number>();
+    try {
+      const [usageRows] = await dbPool.query<RowDataPacket[]>(
+        'SELECT coupon_code, COUNT(*) as cnt FROM orders WHERE coupon_code IS NOT NULL GROUP BY coupon_code'
+      );
+      usageRows.forEach((r) => {
+        if (r.coupon_code) {
+          usageMap.set(r.coupon_code.toUpperCase(), Number(r.cnt));
+        }
+      });
+    } catch (_err) {
+      // Table alters might take a second to run on first init
+    }
+
     return rows.map((o) => ({
       id: o.id,
       code: o.code,
@@ -21,6 +39,8 @@ export const offerService = {
       minOrderAmount: Number(o.min_order_amount),
       maxDiscountAmount: Number(o.max_discount_amount),
       validUntil: o.valid_until,
+      isActive: Boolean(o.is_active),
+      usageCount: o.code ? (usageMap.get(o.code.toUpperCase()) || 0) : 0,
     }));
   },
 

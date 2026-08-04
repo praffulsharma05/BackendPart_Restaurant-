@@ -11,8 +11,9 @@ export const offerController = {
    */
   async getOffers(req: Request, res: Response, next: NextFunction) {
     try {
-      const offers = await offerService.getActiveOffers();
-      return sendSuccess(res, 'Active offers retrieved', offers);
+      const { all } = req.query;
+      const offers = await offerService.getActiveOffers(all === 'true');
+      return sendSuccess(res, 'Offers retrieved successfully', offers);
     } catch (error) {
       next(error);
     }

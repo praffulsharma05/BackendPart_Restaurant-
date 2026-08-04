@@ -385,4 +385,34 @@ export const authService = {
     await dbPool.query('UPDATE users SET is_blocked = ? WHERE id = ?', [isBlocked, userId]);
     return { id: userId, isBlocked };
   },
+
+  async updateProfile(userId: string, data: { name?: string; phone?: string; email?: string; avatarUrl?: string }) {
+    const { name, phone, email, avatarUrl } = data;
+    const updates: string[] = [];
+    const params: any[] = [];
+
+    if (name !== undefined) {
+      updates.push('name = ?');
+      params.push(name);
+    }
+    if (phone !== undefined) {
+      updates.push('phone = ?');
+      params.push(phone);
+    }
+    if (email !== undefined) {
+      updates.push('email = ?');
+      params.push(email);
+    }
+    if (avatarUrl !== undefined) {
+      updates.push('avatar_url = ?');
+      params.push(avatarUrl);
+    }
+
+    if (updates.length > 0) {
+      params.push(userId);
+      await dbPool.query(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`, params);
+    }
+
+    return this.getUserProfile(userId);
+  },
 };
