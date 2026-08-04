@@ -62,6 +62,15 @@ export const offerService = {
 
     const offer = rows[0];
 
+    // Check if the user has already used this coupon code (One time per user check)
+    const [usedCouponRows] = await dbPool.query<RowDataPacket[]>(
+      'SELECT COUNT(*) as cnt FROM orders WHERE user_id = ? AND coupon_code = ?',
+      [userId, code]
+    );
+    if (usedCouponRows[0].cnt > 0) {
+      return { valid: false, message: `Coupon '${code}' has already been used by you` };
+    }
+
     if (subtotal < Number(offer.min_order_amount)) {
       return {
         valid: false,
@@ -128,5 +137,10 @@ export const offerService = {
   async toggleStatus(id: string, isActive: boolean) {
     await dbPool.query('UPDATE offers SET is_active = ? WHERE id = ?', [isActive, id]);
     return { id, isActive };
+  },
+
+  async deleteOffer(id: string) {
+    const [result] = await dbPool.query('DELETE FROM offers WHERE id = ?', [id]);
+    return (result as any).affectedRows > 0;
   },
 };

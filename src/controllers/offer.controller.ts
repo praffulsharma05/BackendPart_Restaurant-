@@ -73,4 +73,13 @@ export const offerController = {
       next(error);
     }
   },
+
+  async deleteOffer(req: Request, res: Response, next: NextFunction) {
+    try {
+      await offerService.deleteOffer(req.params.id);
+      return sendSuccess(res, 'Offer deleted successfully');
+    } catch (error) {
+      next(error);
+    }
+  },
 };

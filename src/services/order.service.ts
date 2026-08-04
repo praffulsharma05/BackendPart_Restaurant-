@@ -232,7 +232,14 @@ export const orderService = {
         );
         if (offerRows.length > 0) {
           const offer = offerRows[0];
-          if (subtotal >= Number(offer.min_order_amount)) {
+          
+          // Verify that this coupon hasn't been used by the user yet
+          const [usedCouponRows] = await connection.query<RowDataPacket[]>(
+            'SELECT COUNT(*) as cnt FROM orders WHERE user_id = ? AND coupon_code = ?',
+            [targetUserId, input.couponCode]
+          );
+
+          if (usedCouponRows[0].cnt === 0 && subtotal >= Number(offer.min_order_amount)) {
             if (offer.offer_type === 'PERCENTAGE') {
               discount = (subtotal * Number(offer.discount_percent)) / 100;
               if (offer.max_discount_amount > 0 && discount > Number(offer.max_discount_amount)) {
