@@ -1,6 +1,7 @@
 import { dbPool } from '../config/db';
 import { RowDataPacket } from 'mysql2';
 import { v4 as uuidv4 } from 'uuid';
+import { notificationService } from './notification.service';
 
 export const waiterService = {
   /**
@@ -16,6 +17,14 @@ export const waiterService = {
       userId || null,
       'PENDING',
     ]);
+    try {
+      await notificationService.createNotification(
+        'ALL',
+        'Attendant Summoned',
+        `Request at location: ${tableNumber}`,
+        'waiter-call'
+      );
+    } catch (_notifErr) {}
     return { id, tableNumber, status: 'PENDING', createdAt: new Date() };
   },
 
