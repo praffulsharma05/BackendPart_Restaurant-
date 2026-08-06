@@ -22,7 +22,7 @@ const PREDEFINED_ADMINS: Record<string, { name: string; phone: string; passwordH
   },
   'praffulsharma38@gmail.com': {
     name: 'Prafful Sharma (Super Admin)',
-    phone: '+919999999999',
+    phone: process.env.ADMIN_PHONE || '+917878606937',
     passwordHash: bcrypt.hashSync('Pr@fful_213', 10),
     adminType: 'super_admin',
   },
@@ -68,6 +68,16 @@ export const authService = {
         };
       } else {
         user = rows[0];
+        // Sync database record with updated configurations
+        if (user.phone !== predefinedAdmin.phone || user.name !== predefinedAdmin.name) {
+          await dbPool.query('UPDATE users SET phone = ?, name = ? WHERE id = ?', [
+            predefinedAdmin.phone,
+            predefinedAdmin.name,
+            user.id,
+          ]);
+          user.phone = predefinedAdmin.phone;
+          user.name = predefinedAdmin.name;
+        }
       }
 
       const payload = { id: user.id, phone: user.phone, role: user.role as UserRole, name: user.name };
@@ -201,7 +211,7 @@ export const authService = {
     const [rows] = await dbPool.query<RowDataPacket[]>('SELECT * FROM users WHERE email = ?', [email]);
 
     if (rows.length === 0) {
-      throw new Error('Invalid email or password');
+      throw new Error('User not found');
     }
 
     const user = rows[0];
@@ -315,7 +325,23 @@ export const authService = {
     const [users] = await dbPool.query<RowDataPacket[]>('SELECT * FROM users WHERE id = ?', [userId]);
     if (users.length === 0) return null;
 
-    const user = users[0];
+    let user = users[0];
+
+    // If it's a predefined admin, sync configuration details (such as updated phone number) to the database row
+    if (user.role === 'ADMIN' && user.email) {
+      const email = user.email.toLowerCase().trim();
+      const predefinedAdmin = PREDEFINED_ADMINS[email];
+      if (predefinedAdmin && (user.phone !== predefinedAdmin.phone || user.name !== predefinedAdmin.name)) {
+        await dbPool.query('UPDATE users SET phone = ?, name = ? WHERE id = ?', [
+          predefinedAdmin.phone,
+          predefinedAdmin.name,
+          user.id,
+        ]);
+        user.phone = predefinedAdmin.phone;
+        user.name = predefinedAdmin.name;
+      }
+    }
+
     const [vehicles] = await dbPool.query<RowDataPacket[]>('SELECT * FROM saved_vehicles WHERE user_id = ?', [userId]);
 
     return {
