@@ -8,7 +8,7 @@ import bcrypt from 'bcryptjs';
 // Admin credentials loaded from .env
 // Admin credentials list (Super Admin & Secondary Admins)
 const PREDEFINED_ADMINS: Record<string, { name: string; phone: string; passwordHash: string; adminType: string }> = {
-  [(process.env.ADMIN_EMAIL || 'admin@luxedine.com').toLowerCase()]: {
+  [(process.env.ADMIN_EMAIL || 'admin@mealsonwheels.com').toLowerCase()]: {
     name: process.env.ADMIN_NAME || 'Prafful Sharma (Super Admin)',
     phone: process.env.ADMIN_PHONE || '+919999999999',
     passwordHash: bcrypt.hashSync(process.env.ADMIN_PASSWORD || 'Pr@fful_213', 10),

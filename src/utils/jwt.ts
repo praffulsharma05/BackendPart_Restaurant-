@@ -4,8 +4,8 @@ import { UserPayload } from '../types';
 
 dotenv.config();
 
-const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_jwt_access_key_restaurant_luxe_2026';
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'super_secret_jwt_refresh_key_restaurant_luxe_2026';
+const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_jwt_access_key_restaurant_meals_on_wheels_2026';
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'super_secret_jwt_refresh_key_restaurant_meals_on_wheels_2026';
 
 /**
  *
