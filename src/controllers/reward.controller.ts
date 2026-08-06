@@ -20,4 +20,22 @@ export const rewardController = {
       next(error);
     }
   },
+
+  async getRewardSettings(req: Request, res: Response, next: NextFunction) {
+    try {
+      const settings = await rewardService.getRewardSettings();
+      return sendSuccess(res, 'Reward settings retrieved successfully', settings);
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async updateRewardSettings(req: Request, res: Response, next: NextFunction) {
+    try {
+      const updated = await rewardService.updateRewardSettings(req.body);
+      return sendSuccess(res, 'Reward configuration updated successfully', updated);
+    } catch (error) {
+      next(error);
+    }
+  },
 };
