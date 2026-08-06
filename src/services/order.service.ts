@@ -468,6 +468,7 @@ export const orderService = {
       paymentStatus: order.payment_status,
       cancellationReason: order.cancellation_reason,
       createdAt: order.created_at,
+      updatedAt: order.updated_at,
     };
   },
 

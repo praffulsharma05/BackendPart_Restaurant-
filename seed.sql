@@ -146,11 +146,8 @@ INSERT INTO order_fulfillment_car (order_id, car_number, car_model, parking_spot
 ('ord_1001', 'DXB 48291', 'Porsche Taycan (Black)', 'Spot B-04');
 
 INSERT INTO order_items (id, order_id, menu_item_id, item_name, unit_price, quantity, subtotal, custom_instructions) VALUES
-('oi_1', 'ord_1001', 'm1', 'Truffle Tagliolini', 28.50, 1, 34.50, 'Extra hot'),
-('oi_2', 'ord_1001', 'm3', 'Signature Wagyu Burger', 24.00, 1, 24.00, 'Medium rare patty');
-
-INSERT INTO order_item_options (order_item_id, option_id, option_name, option_price) VALUES
-('oi_1', 'o1', 'Extra Truffle Shavings', 6.00);
+('oi_1', 'ord_1001', 'm_nv_snack_1', 'Peshawari Chicken Tikka (6pcs)', 225.00, 1, 225.00, 'Extra hot'),
+('oi_2', 'ord_1001', 'm_nv_snack_3', 'Malai Chicken Tikka (6pcs)', 250.00, 1, 250.00, 'Medium spicy');
 
 -- 11. Insert Reward Transactions (6 Month Expiry)
 INSERT INTO reward_transactions (id, user_id, order_id, points, type, expiry_date, created_at) VALUES
