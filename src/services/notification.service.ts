@@ -56,4 +56,13 @@ export const notificationService = {
     await dbPool.query('DELETE FROM notifications WHERE id = ?', [id]);
     return { id, deleted: true };
   },
+
+  /**
+   * Clear / delete all notifications for a user or system
+   * @param userId
+   */
+  async clearAllNotifications(userId: string) {
+    await dbPool.query('DELETE FROM notifications WHERE user_id = ? OR user_id = "ALL"', [userId]);
+    return { cleared: true };
+  },
 };

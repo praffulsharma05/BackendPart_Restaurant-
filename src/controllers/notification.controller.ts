@@ -48,4 +48,20 @@ export const notificationController = {
       next(error);
     }
   },
+
+  /**
+   * Clear all notifications permanently
+   * @param req
+   * @param res
+   * @param next
+   */
+  async clearAllNotifications(req: Request, res: Response, next: NextFunction) {
+    try {
+      const userId = req.user?.id || 'u101';
+      const result = await notificationService.clearAllNotifications(userId);
+      return sendSuccess(res, 'All notifications cleared successfully', result);
+    } catch (error) {
+      next(error);
+    }
+  },
 };
