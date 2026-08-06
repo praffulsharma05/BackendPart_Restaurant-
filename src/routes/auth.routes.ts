@@ -7,6 +7,7 @@ const router = Router();
 
 router.post('/admin-login', authController.adminLogin);
 router.post('/login', authController.login);
+router.post('/register', authController.register);
 router.post('/refresh-token', authController.refreshToken);
 router.get('/profile', authenticate, authController.getProfile);
 router.put('/profile', authenticate, authController.updateProfile);

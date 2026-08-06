@@ -36,7 +36,7 @@ export const authController = {
     try {
       const { phone, email, password, name } = req.body;
 
-      // Phone-based login (auto-register)
+      // Phone-based login
       if (phone) {
         const result = await authService.loginWithPhone(phone, name);
         return sendSuccess(res, 'Login successful', result);
@@ -50,13 +50,26 @@ export const authController = {
 
       return sendError(res, 'Please provide phone number or email with password', 400);
     } catch (error: any) {
-      if (error.message === 'Invalid email or password') {
-        return sendError(res, 'Invalid email or password', 401);
+      if (error.message === 'Invalid email or password' || error.message === 'User not found') {
+        return sendError(res, error.message, 401);
       }
       if (error.message === 'Phone number is required') {
         return sendError(res, error.message, 400);
       }
       next(error);
+    }
+  },
+
+  async register(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { phone, email, name, password } = req.body;
+      if (!phone || !name) {
+        return sendError(res, 'Phone number and name are required', 400);
+      }
+      const result = await authService.register(phone, email, name, password);
+      return sendSuccess(res, 'Registration successful', result, 201);
+    } catch (error: any) {
+      return sendError(res, error.message || 'Registration failed', 400);
     }
   },
 

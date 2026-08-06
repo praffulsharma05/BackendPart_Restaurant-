@@ -144,14 +144,7 @@ export const authService = {
 
     let user: any;
     if (rows.length === 0) {
-      // Create new user (auto-register)
-      const userId = `u_${Date.now()}`;
-      const defaultName = nameInput || `Customer (${phone.slice(-4)})`;
-      await dbPool.query(
-        'INSERT INTO users (id, phone, name, role, reward_points, gold_member) VALUES (?, ?, ?, ?, ?, ?)',
-        [userId, phone, defaultName, 'CUSTOMER', 100, false]
-      );
-      user = { id: userId, phone, name: defaultName, role: 'CUSTOMER', reward_points: 100, gold_member: false };
+      throw new Error('User not found');
     } else {
       user = rows[0];
       // Update name if provided and user exists
@@ -461,5 +454,58 @@ export const authService = {
     } finally {
       connection.release();
     }
+  },
+
+  async register(phoneInput: string, emailInput: string, nameInput: string, passwordInput: string) {
+    const phone = (phoneInput || '').trim();
+    const email = (emailInput || '').toLowerCase().trim();
+    const name = (nameInput || '').trim();
+
+    // Check if phone already exists
+    const [existingPhone] = await dbPool.query<RowDataPacket[]>('SELECT id FROM users WHERE phone = ?', [phone]);
+    if (existingPhone.length > 0) {
+      throw new Error('Phone number is already registered');
+    }
+    if (email) {
+      const [existingEmail] = await dbPool.query<RowDataPacket[]>('SELECT id FROM users WHERE email = ?', [email]);
+      if (existingEmail.length > 0) {
+        throw new Error('Email is already registered');
+      }
+    }
+
+    const userId = `u_${Date.now()}`;
+    await dbPool.query(
+      'INSERT INTO users (id, phone, name, email, role, reward_points, gold_member) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [userId, phone, name, email || null, 'CUSTOMER', 100, false]
+    );
+
+    const payload = { id: userId, phone, role: 'CUSTOMER' as UserRole, name };
+    const accessToken = generateAccessToken(payload);
+    const refreshToken = generateRefreshToken(payload);
+
+    const tokenId = uuidv4();
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7);
+
+    await dbPool.query('INSERT INTO refresh_tokens (id, user_id, token, expires_at) VALUES (?, ?, ?, ?)', [
+      tokenId,
+      userId,
+      refreshToken,
+      expiresAt,
+    ]);
+
+    return {
+      user: {
+        id: userId,
+        phone,
+        name,
+        email: email || null,
+        role: 'CUSTOMER',
+        rewardPoints: 100,
+        goldMember: false,
+      },
+      accessToken,
+      refreshToken,
+    };
   },
 };

@@ -27,6 +27,7 @@ export const orderService = {
           payment_method VARCHAR(50) NOT NULL DEFAULT 'UPI',
           payment_status VARCHAR(50) NOT NULL DEFAULT 'PAID',
           cancellation_reason TEXT,
+          payment_screenshot_url VARCHAR(500) NULL,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
       `);
@@ -34,6 +35,14 @@ export const orderService = {
       await dbPool.query(`
         ALTER TABLE orders MODIFY COLUMN order_type VARCHAR(50) NOT NULL DEFAULT 'Delivery';
       `);
+
+      try {
+        await dbPool.query(`
+          ALTER TABLE orders ADD COLUMN payment_screenshot_url VARCHAR(500) NULL;
+        `);
+      } catch (_e) {
+        // Fallback if column already exists
+      }
     } catch (_e) {
       // Table modification fallback
     }
@@ -314,9 +323,9 @@ export const orderService = {
       // 5. Insert Order Header
       await connection.query(
         `INSERT INTO orders 
-          (id, user_id, order_type, subtotal, discount, tax, service_charge, reward_points_earned, reward_points_used, total, status, prep_time_minutes, payment_method, payment_status, coupon_code)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending', ?, ?, 'PAID', ?)`,
-        [orderId, targetUserId, safeOrderType, subtotal, discount, tax, serviceCharge, rewardPointsEarned, rewardPointsUsed, total, prepTimeMinutes, safePaymentMethod, input.couponCode || null]
+          (id, user_id, order_type, subtotal, discount, tax, service_charge, reward_points_earned, reward_points_used, total, status, prep_time_minutes, payment_method, payment_status, coupon_code, payment_screenshot_url)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending', ?, ?, 'PAID', ?, ?)`,
+        [orderId, targetUserId, safeOrderType, subtotal, discount, tax, serviceCharge, rewardPointsEarned, rewardPointsUsed, total, prepTimeMinutes, safePaymentMethod, input.couponCode || null, input.paymentScreenshotUrl || null]
       );
 
       // 6. Insert Fulfillment Details
@@ -468,6 +477,7 @@ export const orderService = {
       paymentStatus: order.payment_status,
       cancellationReason: order.cancellation_reason,
       createdAt: order.created_at,
+      paymentScreenshotUrl: order.payment_screenshot_url,
     };
   },
 

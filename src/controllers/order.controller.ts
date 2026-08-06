@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { orderService } from '../services/order.service';
 import { sendSuccess, sendError } from '../utils/apiResponse';
 import { OrderStatus, PrepTimeMinutes } from '../types';
+import { STAFF_ROLES, ERROR_MESSAGES } from '../constants';
 
 export const orderController = {
   /**
@@ -33,6 +34,15 @@ export const orderController = {
     try {
       const order = await orderService.getOrderById(req.params.id);
       if (!order) return sendError(res, 'Order not found', 404);
+
+      // Check if user is the owner or is restaurant staff
+      const isOwner = req.user && req.user.id === order.userId;
+      const isStaff = req.user && STAFF_ROLES.includes(req.user.role);
+
+      if (!isOwner && !isStaff) {
+        return sendError(res, ERROR_MESSAGES.ACCESS_DENIED, 403);
+      }
+
       return sendSuccess(res, 'Order details retrieved', order);
     } catch (error) {
       next(error);

@@ -49,4 +49,5 @@ export interface CreateOrderInput {
   preOrderDetails?: PreOrderFulfillmentInput;
   customerName?: string;
   customerPhone?: string;
+  paymentScreenshotUrl?: string;
 }
