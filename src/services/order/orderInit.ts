@@ -11,6 +11,18 @@ export async function initTables() {
     } catch (_e) {
       // Fallback if column already exists
     }
+
+    try {
+      await dbPool.query(ORDER_STRINGS.SQL.ADD_COUPON_CODE_COLUMN);
+    } catch (_e) {
+      // Column already exists
+    }
+
+    try {
+      await dbPool.query(ORDER_STRINGS.SQL.ADD_UPDATED_AT_COLUMN);
+    } catch (_e) {
+      // Column already exists
+    }
   } catch (_e) {
     // Table modification fallback
   }

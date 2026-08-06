@@ -38,12 +38,20 @@ export const ORDER_STRINGS = {
         payment_method VARCHAR(50) NOT NULL DEFAULT 'UPI',
         payment_status VARCHAR(50) NOT NULL DEFAULT 'PAID',
         cancellation_reason TEXT,
+        coupon_code VARCHAR(100) NULL,
         payment_screenshot_url VARCHAR(500) NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     `,
     ALTER_ORDERS_TABLE: `
       ALTER TABLE orders MODIFY COLUMN order_type VARCHAR(50) NOT NULL DEFAULT 'Delivery';
+    `,
+    ADD_COUPON_CODE_COLUMN: `
+      ALTER TABLE orders ADD COLUMN coupon_code VARCHAR(100) NULL;
+    `,
+    ADD_UPDATED_AT_COLUMN: `
+      ALTER TABLE orders ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP;
     `,
     ADD_PAYMENT_SCREENSHOT: `
       ALTER TABLE orders ADD COLUMN payment_screenshot_url VARCHAR(500) NULL;

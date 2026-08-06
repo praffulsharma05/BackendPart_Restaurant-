@@ -68,6 +68,7 @@ export async function getOrderById(orderId: string) {
     paymentStatus: order.payment_status,
     cancellationReason: order.cancellation_reason,
     createdAt: order.created_at,
+    updatedAt: order.updated_at,
     paymentScreenshotUrl: order.payment_screenshot_url,
   };
 }

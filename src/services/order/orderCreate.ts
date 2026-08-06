@@ -188,7 +188,7 @@ export async function createOrder(userId: string, input: CreateOrderInput) {
       await connection.query('UPDATE users SET reward_points = reward_points - ? WHERE id = ?', [rewardPointsUsed, targetUserId || 'u101']);
       await connection.query(
         'INSERT INTO reward_transactions (id, user_id, order_id, points, type, expiry_date) VALUES (?, ?, ?, ?, ?, CURRENT_DATE)',
-        [uuidv4(), targetUserId || 'u101', orderId, rewardPointsUsed, 'REDEEMED']
+        [uuidv4(), targetUserId || 'u101', orderId, rewardPointsUsed, 'SPENT']
       );
     }
 
