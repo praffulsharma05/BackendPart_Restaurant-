@@ -7,7 +7,10 @@ import { ensureColumnsExist, getMenuItemById } from './menuQuery';
 export async function createMenuItem(data: any) {
   await ensureColumnsExist();
   const id = `m_${Date.now()}`;
-  const { name, description, price, category, imageUrl, isVegetarian, prepTimeMinutes = 15, ingredients = [], options = [] } = data;
+  const { name, description, price, category, prepTimeMinutes = 15, ingredients = [], options = [] } = data;
+  
+  const imageUrl = data.imageUrl || data.image || '';
+  const isVegetarian = data.isVegetarian !== undefined ? data.isVegetarian : (data.isVeg !== undefined ? data.isVeg : false);
 
   const [cats] = await dbPool.query<RowDataPacket[]>('SELECT id FROM menu_categories WHERE name = ? LIMIT 1', [category]);
   const categoryId = cats.length > 0 ? cats[0].id : 1;
@@ -15,7 +18,7 @@ export async function createMenuItem(data: any) {
   await dbPool.query(
     `INSERT INTO menu_items (id, category_id, name, description, price, category, image_url, is_vegetarian, is_hidden, inventory_status, prep_time_minutes)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, FALSE, 'AVAILABLE', ?)`,
-    [id, categoryId, name, description, price, category, imageUrl || '', isVegetarian ? 1 : 0, Number(prepTimeMinutes) || 15]
+    [id, categoryId, name, description, price, category, imageUrl, isVegetarian ? 1 : 0, Number(prepTimeMinutes) || 15]
   );
 
   for (const ing of ingredients) {
@@ -37,7 +40,10 @@ export async function createMenuItem(data: any) {
 
 export async function updateMenuItem(id: string, data: any) {
   await ensureColumnsExist();
-  const { name, description, price, category, imageUrl, isVegetarian, isHidden, inventoryStatus, prepTimeMinutes } = data;
+  const { name, description, price, category, isHidden, inventoryStatus, prepTimeMinutes } = data;
+  
+  const imageUrl = data.imageUrl !== undefined ? data.imageUrl : data.image;
+  const isVegetarian = data.isVegetarian !== undefined ? data.isVegetarian : data.isVeg;
 
   await dbPool.query(
     `UPDATE menu_items SET 
@@ -51,7 +57,7 @@ export async function updateMenuItem(id: string, data: any) {
       inventory_status = COALESCE(?, inventory_status),
       prep_time_minutes = COALESCE(?, prep_time_minutes)
      WHERE id = ?`,
-    [name, description, price, category, imageUrl, isVegetarian, isHidden, inventoryStatus, prepTimeMinutes ? Number(prepTimeMinutes) : null, id]
+    [name, description, price, category, imageUrl, isVegetarian !== undefined ? (isVegetarian ? 1 : 0) : null, isHidden, inventoryStatus, prepTimeMinutes ? Number(prepTimeMinutes) : null, id]
   );
 
   return getMenuItemById(id);
