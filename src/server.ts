@@ -79,7 +79,7 @@ function bootstrap() {
   const httpServer = app.listen(PORT, () => {
     logger.info(`🚀 Restaurant Enterprise REST API Server running on port ${PORT}`);
     logger.info(`🔗 Health Check: http://localhost:${PORT}/health`);
-    logger.info(`🔗 Base API URL: http://localhost:${PORT}/api`);
+    logger.info(`🔗 Base API URL: http://localhost:${PORT}/`);
   });
 
   // Non-blocking database connection test
