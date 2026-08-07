@@ -34,12 +34,23 @@ export const orderController = {
       const order = await orderService.getOrderById(req.params.id);
       if (!order) return sendError(res, 'Order not found', 404);
 
-      // Check if user is the owner or is restaurant staff
-      const isOwner = req.user && req.user.id === order.userId;
-      const isStaff = req.user && STAFF_ROLES.includes(req.user.role);
+      // Authorization Check:
+      // 1. Order token sent in X-Order-Token header matches order.orderToken (Device that placed order)
+      // 2. User is logged in and is the owner (req.user.id === order.userId)
+      // 3. User is authorized restaurant staff (ADMIN, KITCHEN, WAITER)
+      const requestToken = (req.headers['x-order-token'] || req.query.token) as string | undefined;
+      const hasValidToken = Boolean(
+        requestToken && order.orderToken && requestToken.trim() === order.orderToken.trim()
+      );
+      const isOwner = Boolean(req.user && req.user.id === order.userId);
+      const isStaff = Boolean(req.user && STAFF_ROLES.includes(req.user.role));
 
-      if (!isOwner && !isStaff) {
-        return sendError(res, ERROR_MESSAGES.ACCESS_DENIED, 403);
+      if (!isOwner && !isStaff && !hasValidToken) {
+        return sendError(
+          res,
+          'Access Denied: You are not authorized to view this order details on this device.',
+          403
+        );
       }
 
       return sendSuccess(res, 'Order details retrieved', order);

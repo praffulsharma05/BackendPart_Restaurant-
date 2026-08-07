@@ -6,6 +6,7 @@ import { notificationService } from '../notification.service';
 import { initTables } from './orderInit';
 import { getOrderById } from './orderRead';
 import { ORDER_STRINGS } from './orderStrings';
+import { resolveOrderUser } from './orderHelpers';
 
 export async function createOrder(userId: string, input: CreateOrderInput) {
   await initTables();
@@ -14,67 +15,11 @@ export async function createOrder(userId: string, input: CreateOrderInput) {
   try {
     await connection.beginTransaction();
 
-    // Ensure user row exists to prevent MySQL Foreign Key constraint failure (orders_ibfk_1)
-    let targetUserId = userId && userId.trim() ? userId.trim() : null;
-    try {
-      const uniquePhone = (input.customerPhone || '').trim();
-      let userRow: any = null;
+    const targetUserId = await resolveOrderUser(connection, userId, input);
 
-      // 1. Check if we have an existing user with this phone number to reuse their user ID
-      if (uniquePhone) {
-        const [byPhone] = await connection.query<RowDataPacket[]>('SELECT id, name, role FROM users WHERE phone = ?', [uniquePhone]);
-        if (byPhone.length > 0) {
-          userRow = byPhone[0];
-          targetUserId = userRow.id;
-        }
-      }
-
-      // 2. If no user by phone, check if the provided targetUserId exists
-      if (!userRow && targetUserId) {
-        const [byId] = await connection.query<RowDataPacket[]>('SELECT id, name, role FROM users WHERE id = ?', [targetUserId]);
-        if (byId.length > 0) {
-          userRow = byId[0];
-        }
-      }
-
-      // 3. If still no user exists, create a new customer record
-      if (!userRow) {
-        if (!targetUserId || targetUserId === 'u101') {
-          targetUserId = `u_${Date.now()}`;
-        }
-        const finalPhone = uniquePhone || `+91${Date.now()}${Math.floor(Math.random() * 1000)}`;
-        const displayName = input.customerName || 'Gourmet Customer';
-        
-        await connection.query(
-          `INSERT INTO users (id, phone, name, role, reward_points) 
-           VALUES (?, ?, ?, 'CUSTOMER', 100)`,
-          [targetUserId, finalPhone, displayName]
-        );
-      } else {
-        // If the user already exists, only update their name if they are a CUSTOMER and currently have a placeholder name
-        if (input.customerName && userRow.role === 'CUSTOMER') {
-          const currentName = userRow.name || '';
-          if (!currentName || currentName === 'Gourmet Customer' || currentName.startsWith('Customer')) {
-            await connection.query('UPDATE users SET name = ? WHERE id = ?', [input.customerName, targetUserId]);
-          }
-        }
-      }
-    } catch (err) {
-      console.error('Failed to create/resolve order user:', err);
-      // Fallback to a safe known user if absolutely necessary, but generate a unique phone to avoid conflicts
-      targetUserId = `u_fallback_${Date.now()}`;
-      const fallbackPhone = `+91_fb_${Date.now()}`;
-      const displayName = input.customerName || 'Gourmet Customer';
-      try {
-        await connection.query(
-          `INSERT INTO users (id, phone, name, role, reward_points) 
-           VALUES (?, ?, ?, 'CUSTOMER', 100)`,
-          [targetUserId, fallbackPhone, displayName]
-        );
-      } catch (_ignore) {}
-    }
-
-    const orderId = `ord_${Date.now()}`;
+    const uniqueSuffix = uuidv4().replace(/-/g, '').slice(0, 8).toUpperCase();
+    const orderId = `ORD-${Date.now().toString(36).toUpperCase()}-${uniqueSuffix}`;
+    const orderToken = `otk_${uuidv4().replace(/-/g, '')}`;
     let subtotal = 0;
     const processedItems: any[] = [];
     let maxPrepTime = 15;
@@ -85,7 +30,6 @@ export async function createOrder(userId: string, input: CreateOrderInput) {
 
     const itemsToProcess = input.items;
 
-    // 1. Process items and calculate subtotal
     for (const rawItemInput of itemsToProcess) {
       const itemInput = rawItemInput as any;
       let menuItem: any = null;
@@ -95,7 +39,7 @@ export async function createOrder(userId: string, input: CreateOrderInput) {
           menuItem = menuRows[0];
         }
       } catch (_e) {
-        // Ignore menu row query failure
+        // Ignore
       }
 
       if (!menuItem) {
@@ -146,7 +90,6 @@ export async function createOrder(userId: string, input: CreateOrderInput) {
       });
     }
 
-    // 2. Apply Coupon / Discount
     let discount = 0;
     if (input.couponCode) {
       const [offerRows] = await connection.query<RowDataPacket[]>(
@@ -155,11 +98,9 @@ export async function createOrder(userId: string, input: CreateOrderInput) {
       );
       if (offerRows.length > 0) {
         const offer = offerRows[0];
-        
-        // Verify that this coupon hasn't been used by the user yet
         const [usedCouponRows] = await connection.query<RowDataPacket[]>(
           'SELECT COUNT(*) as cnt FROM orders WHERE user_id = ? AND coupon_code = ?',
-          [targetUserId || 'u101', input.couponCode]
+          [targetUserId, input.couponCode]
         );
 
         if (usedCouponRows[0].cnt === 0 && subtotal >= Number(offer.min_order_amount)) {
@@ -175,46 +116,38 @@ export async function createOrder(userId: string, input: CreateOrderInput) {
       }
     }
 
-    // 3. Apply Reward Points Redemption ($1 per 10 points)
     let rewardPointsUsed = 0;
     if (input.redeemPoints && input.redeemPoints > 0) {
-      const [userRows] = await connection.query<RowDataPacket[]>('SELECT reward_points FROM users WHERE id = ?', [targetUserId || 'u101']);
+      const [userRows] = await connection.query<RowDataPacket[]>('SELECT reward_points FROM users WHERE id = ?', [targetUserId]);
       const currentPoints = userRows[0]?.reward_points || 0;
       rewardPointsUsed = Math.min(currentPoints, input.redeemPoints);
       const pointsDiscount = rewardPointsUsed / 10;
       discount += pointsDiscount;
 
-      // Deduct points from user
-      await connection.query('UPDATE users SET reward_points = reward_points - ? WHERE id = ?', [rewardPointsUsed, targetUserId || 'u101']);
+      await connection.query('UPDATE users SET reward_points = reward_points - ? WHERE id = ?', [rewardPointsUsed, targetUserId]);
       await connection.query(
         'INSERT INTO reward_transactions (id, user_id, order_id, points, type, expiry_date) VALUES (?, ?, ?, ?, ?, CURRENT_DATE)',
-        [uuidv4(), targetUserId || 'u101', orderId, rewardPointsUsed, 'SPENT']
+        [uuidv4(), targetUserId, orderId, rewardPointsUsed, 'SPENT']
       );
     }
 
-    // 4. Calculate Tax (5%) and Service Charge (2.5%)
     const tax = (subtotal - discount) * 0.05;
     const serviceCharge = (subtotal - discount) * 0.025;
     const total = Math.max(0, subtotal - discount + tax + serviceCharge);
 
-    // Earn 1 reward point for every $1 spent
     const rewardPointsEarned = Math.floor(total);
-
-    // Default estimated preparation time
     const prepTimeMinutes = maxPrepTime;
 
     const safeOrderType = input.orderType || 'Pickup';
     const safePaymentMethod = input.paymentMethod || 'UPI';
 
-    // 5. Insert Order Header
     await connection.query(
       `INSERT INTO orders 
-        (id, user_id, order_type, subtotal, discount, tax, service_charge, reward_points_earned, reward_points_used, total, status, prep_time_minutes, payment_method, payment_status, coupon_code, payment_screenshot_url)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending', ?, ?, 'PAID', ?, ?)`,
-      [orderId, targetUserId || 'u101', safeOrderType, subtotal, discount, tax, serviceCharge, rewardPointsEarned, rewardPointsUsed, total, prepTimeMinutes, safePaymentMethod, input.couponCode || null, input.paymentScreenshotUrl || null]
+        (id, user_id, order_type, subtotal, discount, tax, service_charge, reward_points_earned, reward_points_used, total, status, prep_time_minutes, payment_method, payment_status, coupon_code, payment_screenshot_url, order_token)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending', ?, ?, 'PAID', ?, ?, ?)`,
+      [orderId, targetUserId, safeOrderType, subtotal, discount, tax, serviceCharge, rewardPointsEarned, rewardPointsUsed, total, prepTimeMinutes, safePaymentMethod, input.couponCode || null, input.paymentScreenshotUrl || null, orderToken]
     );
 
-    // 6. Insert Fulfillment Details
     try {
       if (input.orderType === 'Car Order' && input.carDetails) {
         await connection.query(
@@ -233,10 +166,9 @@ export async function createOrder(userId: string, input: CreateOrderInput) {
         );
       }
     } catch (_fulErr) {
-      // Ignore fulfillment insert failure
+      // Ignore
     }
 
-    // 7. Insert Order Line Items & Selected Options
     for (const item of processedItems) {
       const orderItemId = uuidv4();
       await connection.query(
@@ -253,7 +185,7 @@ export async function createOrder(userId: string, input: CreateOrderInput) {
               [orderItemId, opt.id, opt.name, opt.price]
             );
           } catch (_optErr) {
-            // Ignore option insert error
+            // Ignore
           }
         }
       }
@@ -266,22 +198,25 @@ export async function createOrder(userId: string, input: CreateOrderInput) {
     try {
       fetchedOrder = await getOrderById(orderId);
     } catch (_e) {
-      // Fall back to memory object if DB re-query fails
+      // Ignore
     }
 
     try {
       await notificationService.createNotification(
-        targetUserId || 'u101',
+        targetUserId,
         ORDER_STRINGS.NOTIFICATIONS.PLACED_TITLE,
         ORDER_STRINGS.NOTIFICATIONS.PLACED_BODY(orderId),
         'order'
       );
     } catch (_notifErr) {}
 
-    if (fetchedOrder) return fetchedOrder;
+    if (fetchedOrder) {
+      return { ...fetchedOrder, orderToken };
+    }
 
     return {
       id: orderId,
+      orderToken,
       orderType: safeOrderType,
       subtotal,
       discount,

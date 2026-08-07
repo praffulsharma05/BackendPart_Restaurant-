@@ -2,14 +2,9 @@ import { Request, Response, NextFunction } from 'express';
 import { menuService } from '../services/menu.service';
 import { uploadToCloudinary } from '../config/cloudinary';
 import { sendSuccess, sendError } from '../utils/apiResponse';
+import { customizationController } from './customization.controller';
 
 export const menuController = {
-  /**
-   *
-   * @param req
-   * @param res
-   * @param next
-   */
   async getCategories(req: Request, res: Response, next: NextFunction) {
     try {
       const categories = await menuService.getCategories();
@@ -19,12 +14,6 @@ export const menuController = {
     }
   },
 
-  /**
-   *
-   * @param req
-   * @param res
-   * @param next
-   */
   async getMenuItems(req: Request, res: Response, next: NextFunction) {
     try {
       const { category, search, includeHidden, minRating, priceRange, spiceLevel, sortBy } = req.query;
@@ -48,12 +37,6 @@ export const menuController = {
     }
   },
 
-  /**
-   *
-   * @param req
-   * @param res
-   * @param next
-   */
   async getMenuItemById(req: Request, res: Response, next: NextFunction) {
     try {
       const item = await menuService.getMenuItemById(req.params.id);
@@ -64,12 +47,6 @@ export const menuController = {
     }
   },
 
-  /**
-   *
-   * @param req
-   * @param res
-   * @param next
-   */
   async createMenuItem(req: Request, res: Response, next: NextFunction) {
     try {
       const item = await menuService.createMenuItem(req.body);
@@ -79,12 +56,6 @@ export const menuController = {
     }
   },
 
-  /**
-   *
-   * @param req
-   * @param res
-   * @param next
-   */
   async updateMenuItem(req: Request, res: Response, next: NextFunction) {
     try {
       const item = await menuService.updateMenuItem(req.params.id, req.body);
@@ -94,15 +65,9 @@ export const menuController = {
     }
   },
 
-  /**
-   *
-   * @param req
-   * @param res
-   * @param next
-   */
   async updateInventoryStatus(req: Request, res: Response, next: NextFunction) {
     try {
-      const { status } = req.body; // 'AVAILABLE' | 'SOLD_OUT'
+      const { status } = req.body;
       if (!['AVAILABLE', 'SOLD_OUT'].includes(status)) {
         return sendError(res, "Status must be 'AVAILABLE' or 'SOLD_OUT'", 400);
       }
@@ -113,12 +78,6 @@ export const menuController = {
     }
   },
 
-  /**
-   *
-   * @param req
-   * @param res
-   * @param next
-   */
   async toggleHide(req: Request, res: Response, next: NextFunction) {
     try {
       const { isHidden } = req.body;
@@ -129,9 +88,6 @@ export const menuController = {
     }
   },
 
-  /**
-   * Get all archived menu items
-   */
   async getArchivedMenuItems(req: Request, res: Response, next: NextFunction) {
     try {
       const items = await menuService.getArchivedMenuItems();
@@ -141,9 +97,6 @@ export const menuController = {
     }
   },
 
-  /**
-   * Soft delete a menu item (moves to archive)
-   */
   async deleteMenuItem(req: Request, res: Response, next: NextFunction) {
     try {
       const deleted = await menuService.deleteMenuItem(req.params.id);
@@ -154,9 +107,6 @@ export const menuController = {
     }
   },
 
-  /**
-   * Restore an archived menu item
-   */
   async restoreMenuItem(req: Request, res: Response, next: NextFunction) {
     try {
       const restored = await menuService.restoreMenuItem(req.params.id);
@@ -167,9 +117,6 @@ export const menuController = {
     }
   },
 
-  /**
-   * Permanently delete an archived menu item
-   */
   async permanentDeleteMenuItem(req: Request, res: Response, next: NextFunction) {
     try {
       const deleted = await menuService.permanentDeleteMenuItem(req.params.id);
@@ -180,12 +127,6 @@ export const menuController = {
     }
   },
 
-  /**
-   *
-   * @param req
-   * @param res
-   * @param next
-   */
   async uploadImage(req: Request, res: Response, next: NextFunction) {
     try {
       if (!req.file) {
@@ -202,7 +143,7 @@ export const menuController = {
           imageUrl = cloudUrl;
         }
       } catch (err) {
-        // Fallback to base64 data URI
+        // Fallback
       }
 
       return sendSuccess(res, 'Image uploaded successfully', { imageUrl });
@@ -211,72 +152,12 @@ export const menuController = {
     }
   },
 
-  /**
-   *
-   * @param req
-   * @param res
-   * @param next
-   */
-  async getCustomizations(req: Request, res: Response, next: NextFunction) {
-    try {
-      const options = await menuService.getCustomizationsByMenuItemId(req.params.id);
-      return sendSuccess(res, 'Customizations retrieved successfully', options);
-    } catch (error) {
-      next(error);
-    }
-  },
-
-  /**
-   *
-   * @param req
-   * @param res
-   * @param next
-   */
-  async addCustomization(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { name, price } = req.body;
-      if (!name || price === undefined) {
-        return sendError(res, 'Name and price are required', 400);
-      }
-      const option = await menuService.addCustomizationOption(req.params.id, { name, price: Number(price) });
-      return sendSuccess(res, 'Customization added successfully', option, 201);
-    } catch (error) {
-      next(error);
-    }
-  },
-
-  /**
-   *
-   * @param req
-   * @param res
-   * @param next
-   */
-  async updateCustomization(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { name, price } = req.body;
-      if (!name || price === undefined) {
-        return sendError(res, 'Name and price are required', 400);
-      }
-      const option = await menuService.updateCustomizationOption(req.params.id, req.params.customizationId, { name, price: Number(price) });
-      return sendSuccess(res, 'Customization updated successfully', option);
-    } catch (error) {
-      next(error);
-    }
-  },
-
-  /**
-   *
-   * @param req
-   * @param res
-   * @param next
-   */
-  async deleteCustomization(req: Request, res: Response, next: NextFunction) {
-    try {
-      const deleted = await menuService.deleteCustomizationOption(req.params.id, req.params.customizationId);
-      if (!deleted) return sendError(res, 'Customization not found', 404);
-      return sendSuccess(res, 'Customization deleted successfully');
-    } catch (error) {
-      next(error);
-    }
-  },
+  getCustomizations: customizationController.getCustomizations,
+  addCustomization: customizationController.addCustomization,
+  updateCustomization: customizationController.updateCustomization,
+  deleteCustomization: customizationController.deleteCustomization,
+  getMasterCustomizations: customizationController.getMasterCustomizations,
+  addMasterCustomization: customizationController.addMasterCustomization,
+  updateMasterCustomization: customizationController.updateMasterCustomization,
+  deleteMasterCustomization: customizationController.deleteMasterCustomization,
 };
