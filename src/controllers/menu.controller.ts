@@ -78,7 +78,6 @@ export const menuController = {
 
   async updateInventoryStatus(req: Request, res: Response, next: NextFunction) {
     try {
-      const { status } = req.body;
       const { status } = req.body; // 'AVAILABLE' | 'SOLD_OUT'
       logger.info('[Menu] Updating inventory status', { id: req.params.id, status });
       if (!['AVAILABLE', 'SOLD_OUT'].includes(status)) {
@@ -257,10 +256,6 @@ export const menuController = {
       next(error);
     }
   },
-  getCustomizations: customizationController.getCustomizations,
-  addCustomization: customizationController.addCustomization,
-  updateCustomization: customizationController.updateCustomization,
-  deleteCustomization: customizationController.deleteCustomization,
   getMasterCustomizations: customizationController.getMasterCustomizations,
   addMasterCustomization: customizationController.addMasterCustomization,
   updateMasterCustomization: customizationController.updateMasterCustomization,

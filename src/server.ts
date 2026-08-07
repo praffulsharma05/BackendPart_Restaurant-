@@ -13,8 +13,9 @@ import path from 'path';
 // Preserve Passenger's assigned PORT before dotenv overrides it
 const passengerPort = process.env.PORT;
 
-dotenv.config({ path: path.resolve(__dirname, '../.env') });
-dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+dotenv.config({ path: path.resolve(__dirname, '../.env'), override: true });
+dotenv.config({ path: path.resolve(__dirname, '../../.env'), override: true });
+dotenv.config({ path: path.resolve(process.cwd(), '.env'), override: true });
 
 const app = express();
 

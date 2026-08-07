@@ -49,10 +49,8 @@ export const orderController = {
       const isOwner = Boolean(req.user && req.user.id === order.userId);
       const isStaff = Boolean(req.user && STAFF_ROLES.includes(req.user.role));
 
-      if (!isOwner && !isStaff) {
-        logger.warn('[Order] Access denied to order details', { id: req.params.id, userId: req.user?.id });
-        return sendError(res, ERROR_MESSAGES.ACCESS_DENIED, 403);
       if (!isOwner && !isStaff && !hasValidToken) {
+        logger.warn('[Order] Access denied to order details', { id: req.params.id, userId: req.user?.id });
         return sendError(
           res,
           'Access Denied: You are not authorized to view this order details on this device.',

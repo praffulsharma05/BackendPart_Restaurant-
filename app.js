@@ -4,8 +4,8 @@ const path = require('path');
 const dotenv = require('dotenv');
 
 // Load environment variables immediately in Passenger boot environment
-dotenv.config({ path: path.join(__dirname, '.env') });
-dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+dotenv.config({ path: path.join(__dirname, '.env'), override: true });
+dotenv.config({ path: path.resolve(process.cwd(), '.env'), override: true });
 
 const logFile = path.join(__dirname, 'debug.log');
 
