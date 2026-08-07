@@ -1,20 +1,37 @@
 export const logger = {
   /**
-   *
-   * @param msg
-   * @param {...any} meta
+   * Log info level messages
    */
-  info: (msg: string, ...meta: any[]) => console.log(`[INFO] ${new Date().toISOString()} - ${msg}`, ...meta),
+  info: (msg: string, ...meta: any[]) => {
+    const timestamp = new Date().toISOString();
+    if (meta.length > 0) {
+      console.log(`[INFO] ${timestamp} - ${msg}`, ...meta.map(m => (typeof m === 'object' ? JSON.stringify(m) : m)));
+    } else {
+      console.log(`[INFO] ${timestamp} - ${msg}`);
+    }
+  },
+
   /**
-   *
-   * @param msg
-   * @param {...any} meta
+   * Log warning level messages
    */
-  warn: (msg: string, ...meta: any[]) => console.warn(`[WARN] ${new Date().toISOString()} - ${msg}`, ...meta),
+  warn: (msg: string, ...meta: any[]) => {
+    const timestamp = new Date().toISOString();
+    if (meta.length > 0) {
+      console.warn(`[WARN] ${timestamp} - ${msg}`, ...meta.map(m => (typeof m === 'object' ? JSON.stringify(m) : m)));
+    } else {
+      console.warn(`[WARN] ${timestamp} - ${msg}`);
+    }
+  },
+
   /**
-   *
-   * @param msg
-   * @param {...any} meta
+   * Log error level messages
    */
-  error: (msg: string, ...meta: any[]) => console.error(`[ERROR] ${new Date().toISOString()} - ${msg}`, ...meta),
+  error: (msg: string, ...meta: any[]) => {
+    const timestamp = new Date().toISOString();
+    if (meta.length > 0) {
+      console.error(`[ERROR] ${timestamp} - ${msg}`, ...meta.map(m => (typeof m === 'object' ? JSON.stringify(m) : m)));
+    } else {
+      console.error(`[ERROR] ${timestamp} - ${msg}`);
+    }
+  },
 };

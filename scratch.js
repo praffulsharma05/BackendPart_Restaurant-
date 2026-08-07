@@ -1,6 +1,8 @@
+const BASE_URL = process.env.API_URL || 'http://localhost:5000/api';
+
 async function testCallWaiter() {
   try {
-    const res = await fetch('http://localhost:5000/api/waiter/call', {
+    const res = await fetch(`${BASE_URL}/waiter/call`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ tableNumber: 'Table 12 / Tesla NY 04 (Extra napkins)' })
@@ -13,4 +15,5 @@ async function testCallWaiter() {
     console.error('Error hitting endpoint:', err.message);
   }
 }
+
 testCallWaiter();

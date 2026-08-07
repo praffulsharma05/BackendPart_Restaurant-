@@ -3,8 +3,10 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import apiRouter from './routes';
 import { errorHandler } from './middlewares/error.middleware';
+import { requestLogger } from './middlewares/logger.middleware';
 import { testDbConnection } from './config/db';
 import { logger } from './utils/logger';
+import { sendError } from './utils/apiResponse';
 
 dotenv.config();
 
@@ -32,6 +34,9 @@ app.use((req: Request, res: Response, next) => {
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
+// HTTP Request Logger Middleware
+app.use(requestLogger);
+
 // Root Endpoint (Required for cPanel / Phusion Passenger health check)
 app.get('/', (_req: Request, res: Response, next) => {
   if (_req.headers.accept && _req.headers.accept.includes('text/html')) {
@@ -54,6 +59,11 @@ app.get('/health', async (_req: Request, res: Response) => {
 // API Routes (Mounted on both /api and / for cPanel subpath compatibility)
 app.use('/api', apiRouter);
 app.use('/', apiRouter);
+
+// Fallback 404 Handler for undefined API routes
+app.use((req: Request, res: Response) => {
+  return sendError(res, `API route not found: ${req.method} ${req.originalUrl}`, 404);
+});
 
 // Centralized Error Handler
 app.use(errorHandler);
