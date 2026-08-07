@@ -19,7 +19,6 @@ export const orderController = {
 
       return sendSuccess(res, 'Order placed successfully', order, 201);
     } catch (error: any) {
-      console.error('CRITICAL Order Creation Error:', error);
       return sendError(res, error.message || 'Failed to place order', 400);
     }
   },

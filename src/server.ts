@@ -3,8 +3,10 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import apiRouter from './routes';
 import { errorHandler } from './middlewares/error.middleware';
+import { requestLogger } from './middlewares/logger.middleware';
 import { testDbConnection } from './config/db';
 import { logger } from './utils/logger';
+import { sendError } from './utils/apiResponse';
 
 dotenv.config();
 
@@ -22,6 +24,9 @@ app.use(
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
+// HTTP Request Logger Middleware
+app.use(requestLogger);
+
 // Health Check Endpoint
 app.get('/health', async (_req: Request, res: Response) => {
   res.status(200).json({
@@ -33,6 +38,11 @@ app.get('/health', async (_req: Request, res: Response) => {
 
 // API Routes
 app.use('/api', apiRouter);
+
+// Fallback 404 Handler for undefined API routes
+app.use((req: Request, res: Response) => {
+  return sendError(res, `API route not found: ${req.method} ${req.originalUrl}`, 404);
+});
 
 // Centralized Error Handler
 app.use(errorHandler);
