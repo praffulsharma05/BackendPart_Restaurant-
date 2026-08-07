@@ -7,6 +7,7 @@ import { initTables } from './orderInit';
 import { getOrderById } from './orderRead';
 import { ORDER_STRINGS } from './orderStrings';
 import { resolveOrderUser } from './orderHelpers';
+import { processOrderDiscounts } from './orderDiscounts';
 
 export async function createOrder(userId: string, input: CreateOrderInput) {
   await initTables();
@@ -28,9 +29,7 @@ export async function createOrder(userId: string, input: CreateOrderInput) {
       throw new Error(ORDER_STRINGS.ERRORS.NO_ITEMS);
     }
 
-    const itemsToProcess = input.items;
-
-    for (const rawItemInput of itemsToProcess) {
+    for (const rawItemInput of input.items) {
       const itemInput = rawItemInput as any;
       let menuItem: any = null;
       try {
@@ -38,9 +37,7 @@ export async function createOrder(userId: string, input: CreateOrderInput) {
         if (menuRows.length > 0) {
           menuItem = menuRows[0];
         }
-      } catch (_e) {
-        // Ignore
-      }
+      } catch (_e) {}
 
       if (!menuItem) {
         menuItem = {
@@ -90,46 +87,7 @@ export async function createOrder(userId: string, input: CreateOrderInput) {
       });
     }
 
-    let discount = 0;
-    if (input.couponCode) {
-      const [offerRows] = await connection.query<RowDataPacket[]>(
-        'SELECT * FROM offers WHERE code = ? AND is_active = TRUE AND (valid_until IS NULL OR valid_until > NOW())',
-        [input.couponCode]
-      );
-      if (offerRows.length > 0) {
-        const offer = offerRows[0];
-        const [usedCouponRows] = await connection.query<RowDataPacket[]>(
-          'SELECT COUNT(*) as cnt FROM orders WHERE user_id = ? AND coupon_code = ?',
-          [targetUserId, input.couponCode]
-        );
-
-        if (usedCouponRows[0].cnt === 0 && subtotal >= Number(offer.min_order_amount)) {
-          if (offer.offer_type === 'PERCENTAGE') {
-            discount = (subtotal * Number(offer.discount_percent)) / 100;
-            if (offer.max_discount_amount > 0 && discount > Number(offer.max_discount_amount)) {
-              discount = Number(offer.max_discount_amount);
-            }
-          } else if (offer.offer_type === 'FLAT' || offer.offer_type === 'FIRST_ORDER') {
-            discount = Number(offer.discount_amount);
-          }
-        }
-      }
-    }
-
-    let rewardPointsUsed = 0;
-    if (input.redeemPoints && input.redeemPoints > 0) {
-      const [userRows] = await connection.query<RowDataPacket[]>('SELECT reward_points FROM users WHERE id = ?', [targetUserId]);
-      const currentPoints = userRows[0]?.reward_points || 0;
-      rewardPointsUsed = Math.min(currentPoints, input.redeemPoints);
-      const pointsDiscount = rewardPointsUsed / 10;
-      discount += pointsDiscount;
-
-      await connection.query('UPDATE users SET reward_points = reward_points - ? WHERE id = ?', [rewardPointsUsed, targetUserId]);
-      await connection.query(
-        'INSERT INTO reward_transactions (id, user_id, order_id, points, type, expiry_date) VALUES (?, ?, ?, ?, ?, CURRENT_DATE)',
-        [uuidv4(), targetUserId, orderId, rewardPointsUsed, 'SPENT']
-      );
-    }
+    const { discount, rewardPointsUsed } = await processOrderDiscounts(connection, input, targetUserId, subtotal, orderId);
 
     const tax = (subtotal - discount) * 0.05;
     const serviceCharge = (subtotal - discount) * 0.025;
@@ -165,9 +123,7 @@ export async function createOrder(userId: string, input: CreateOrderInput) {
           [orderId, input.preOrderDetails.scheduledDate, input.preOrderDetails.scheduledTime]
         );
       }
-    } catch (_fulErr) {
-      // Ignore
-    }
+    } catch (_fulErr) {}
 
     for (const item of processedItems) {
       const orderItemId = uuidv4();
@@ -184,9 +140,7 @@ export async function createOrder(userId: string, input: CreateOrderInput) {
               'INSERT INTO order_item_options (order_item_id, option_id, option_name, option_price) VALUES (?, ?, ?, ?)',
               [orderItemId, opt.id, opt.name, opt.price]
             );
-          } catch (_optErr) {
-            // Ignore
-          }
+          } catch (_optErr) {}
         }
       }
     }
@@ -197,9 +151,7 @@ export async function createOrder(userId: string, input: CreateOrderInput) {
     let fetchedOrder: any = null;
     try {
       fetchedOrder = await getOrderById(orderId);
-    } catch (_e) {
-      // Ignore
-    }
+    } catch (_e) {}
 
     try {
       await notificationService.createNotification(
