@@ -8,13 +8,13 @@ const router = Router();
 
 /**
  * GET /api/payment/config
- * Directly returns confidential admin payment settings from dynamic DB
+ * Reads payment credentials dynamically from environment variables & database
  */
 router.get('/config', async (req: Request, res: Response) => {
   try {
     const details = await restaurantService.getRestaurantDetails();
-    const upiId = details.info.qrDetails.upiId || process.env.ADMIN_UPI_ID || 'gourmetgo@upi';
-    const merchantName = details.info.name || process.env.ADMIN_MERCHANT_NAME || 'Gourmet Go Fine Dining';
+    const upiId = process.env.ADMIN_UPI_ID || details.info.qrDetails.upiId || '';
+    const merchantName = process.env.ADMIN_MERCHANT_NAME || details.info.name || '';
 
     res.status(200).json({
       upiId,
@@ -22,8 +22,8 @@ router.get('/config', async (req: Request, res: Response) => {
     });
   } catch (_e) {
     res.status(200).json({
-      upiId: process.env.ADMIN_UPI_ID || 'gourmetgo@upi',
-      merchantName: process.env.ADMIN_MERCHANT_NAME || 'Gourmet Go Fine Dining',
+      upiId: process.env.ADMIN_UPI_ID || '',
+      merchantName: process.env.ADMIN_MERCHANT_NAME || '',
     });
   }
 });

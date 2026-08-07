@@ -2,15 +2,10 @@ import { Request, Response, NextFunction } from 'express';
 import { menuService } from '../services/menu.service';
 import { uploadToCloudinary } from '../config/cloudinary';
 import { sendSuccess, sendError } from '../utils/apiResponse';
+import { customizationController } from './customization.controller';
 import { logger } from '../utils/logger';
 
 export const menuController = {
-  /**
-   *
-   * @param req
-   * @param res
-   * @param next
-   */
   async getCategories(req: Request, res: Response, next: NextFunction) {
     try {
       logger.info('[Menu] Fetching categories');
@@ -22,12 +17,6 @@ export const menuController = {
     }
   },
 
-  /**
-   *
-   * @param req
-   * @param res
-   * @param next
-   */
   async getMenuItems(req: Request, res: Response, next: NextFunction) {
     try {
       const { category, search, includeHidden, minRating, priceRange, spiceLevel, sortBy } = req.query;
@@ -53,12 +42,6 @@ export const menuController = {
     }
   },
 
-  /**
-   *
-   * @param req
-   * @param res
-   * @param next
-   */
   async getMenuItemById(req: Request, res: Response, next: NextFunction) {
     try {
       logger.info('[Menu] Fetching menu item by ID', { id: req.params.id });
@@ -71,12 +54,6 @@ export const menuController = {
     }
   },
 
-  /**
-   *
-   * @param req
-   * @param res
-   * @param next
-   */
   async createMenuItem(req: Request, res: Response, next: NextFunction) {
     try {
       logger.info('[Menu] Creating menu item', { name: req.body.name });
@@ -88,12 +65,6 @@ export const menuController = {
     }
   },
 
-  /**
-   *
-   * @param req
-   * @param res
-   * @param next
-   */
   async updateMenuItem(req: Request, res: Response, next: NextFunction) {
     try {
       logger.info('[Menu] Updating menu item', { id: req.params.id });
@@ -105,14 +76,9 @@ export const menuController = {
     }
   },
 
-  /**
-   *
-   * @param req
-   * @param res
-   * @param next
-   */
   async updateInventoryStatus(req: Request, res: Response, next: NextFunction) {
     try {
+      const { status } = req.body;
       const { status } = req.body; // 'AVAILABLE' | 'SOLD_OUT'
       logger.info('[Menu] Updating inventory status', { id: req.params.id, status });
       if (!['AVAILABLE', 'SOLD_OUT'].includes(status)) {
@@ -127,12 +93,6 @@ export const menuController = {
     }
   },
 
-  /**
-   *
-   * @param req
-   * @param res
-   * @param next
-   */
   async toggleHide(req: Request, res: Response, next: NextFunction) {
     try {
       const { isHidden } = req.body;
@@ -145,9 +105,6 @@ export const menuController = {
     }
   },
 
-  /**
-   * Get all archived menu items
-   */
   async getArchivedMenuItems(req: Request, res: Response, next: NextFunction) {
     try {
       logger.info('[Menu] Fetching archived menu items');
@@ -159,9 +116,6 @@ export const menuController = {
     }
   },
 
-  /**
-   * Soft delete a menu item (moves to archive)
-   */
   async deleteMenuItem(req: Request, res: Response, next: NextFunction) {
     try {
       logger.info('[Menu] Archiving menu item', { id: req.params.id });
@@ -174,9 +128,6 @@ export const menuController = {
     }
   },
 
-  /**
-   * Restore an archived menu item
-   */
   async restoreMenuItem(req: Request, res: Response, next: NextFunction) {
     try {
       logger.info('[Menu] Restoring menu item', { id: req.params.id });
@@ -189,9 +140,6 @@ export const menuController = {
     }
   },
 
-  /**
-   * Permanently delete an archived menu item
-   */
   async permanentDeleteMenuItem(req: Request, res: Response, next: NextFunction) {
     try {
       logger.info('[Menu] Permanently deleting menu item', { id: req.params.id });
@@ -204,12 +152,6 @@ export const menuController = {
     }
   },
 
-  /**
-   *
-   * @param req
-   * @param res
-   * @param next
-   */
   async uploadImage(req: Request, res: Response, next: NextFunction) {
     try {
       logger.info('[Menu] Uploading dish image');
@@ -228,6 +170,7 @@ export const menuController = {
           imageUrl = cloudUrl;
         }
       } catch (err) {
+        // Fallback
         logger.warn('[Menu] Cloudinary image upload failed, falling back to base64');
       }
 
@@ -314,5 +257,13 @@ export const menuController = {
       next(error);
     }
   },
+  getCustomizations: customizationController.getCustomizations,
+  addCustomization: customizationController.addCustomization,
+  updateCustomization: customizationController.updateCustomization,
+  deleteCustomization: customizationController.deleteCustomization,
+  getMasterCustomizations: customizationController.getMasterCustomizations,
+  addMasterCustomization: customizationController.addMasterCustomization,
+  updateMasterCustomization: customizationController.updateMasterCustomization,
+  deleteMasterCustomization: customizationController.deleteMasterCustomization,
 };
 

@@ -70,6 +70,7 @@ export async function getOrderById(orderId: string) {
     createdAt: order.created_at,
     updatedAt: order.updated_at,
     paymentScreenshotUrl: order.payment_screenshot_url,
+    orderToken: order.order_token,
   };
 }
 

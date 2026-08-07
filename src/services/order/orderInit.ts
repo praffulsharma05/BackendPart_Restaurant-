@@ -23,6 +23,12 @@ export async function initTables() {
     } catch (_e) {
       // Column already exists
     }
+
+    try {
+      await dbPool.query(ORDER_STRINGS.SQL.ADD_ORDER_TOKEN_COLUMN);
+    } catch (_e) {
+      // Column already exists
+    }
   } catch (_e) {
     // Table modification fallback
   }

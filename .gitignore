@@ -35,3 +35,9 @@ coverage/
 # Temporary / Cache
 .cache/
 .tmp/
+
+# Deploy Artifacts
+*.zip
+backend_milesweb_deployment/
+BE_Deploy_*/
+nodemon.json

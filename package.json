@@ -4,7 +4,7 @@
   "description": "Enterprise Scalable REST API for Restaurant Ordering System",
   "main": "dist/server.js",
   "scripts": {
-    "dev": "nodemon --exec ts-node src/server.ts",
+    "dev": "nodemon",
     "build": "tsc",
     "start": "node dist/server.js",
     "check:apis": "ts-node src/scripts/checkApiErrors.ts",

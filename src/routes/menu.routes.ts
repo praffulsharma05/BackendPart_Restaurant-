@@ -7,6 +7,13 @@ const router = Router();
 
 router.get('/categories', menuController.getCategories);
 router.get('/archived', authenticate, authorizeRoles(['ADMIN']), menuController.getArchivedMenuItems);
+
+// Master Customizations endpoints
+router.get('/master-customizations', menuController.getMasterCustomizations);
+router.post('/master-customizations', authenticate, authorizeRoles(['ADMIN']), menuController.addMasterCustomization);
+router.put('/master-customizations/:id', authenticate, authorizeRoles(['ADMIN']), menuController.updateMasterCustomization);
+router.delete('/master-customizations/:id', authenticate, authorizeRoles(['ADMIN']), menuController.deleteMasterCustomization);
+
 router.get('/', menuController.getMenuItems);
 router.get('/:id', menuController.getMenuItemById);
 
