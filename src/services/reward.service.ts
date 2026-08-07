@@ -192,4 +192,35 @@ export const rewardService = {
       })),
     };
   },
+
+  async getVouchers() {
+    return [
+      { id: 'v1', code: 'REWARD50', discount: 50, pointsCost: 100 },
+      { id: 'v2', code: 'REWARD100', discount: 100, pointsCost: 200 },
+      { id: 'v3', code: 'REWARD250', discount: 250, pointsCost: 450 },
+      { id: 'v4', code: 'REWARD500', discount: 500, pointsCost: 800 },
+    ];
+  },
+
+  async redeemVoucher(userId: string, voucherId: string) {
+    const vouchers = await this.getVouchers();
+    const voucher = vouchers.find((v) => v.id === voucherId);
+    if (!voucher) throw new Error('Voucher not found');
+
+    const [userRows] = await dbPool.query<RowDataPacket[]>(
+      'SELECT reward_points FROM users WHERE id = ?',
+      [userId]
+    );
+    if (userRows.length === 0) throw new Error('User not found');
+
+    const currentPoints = userRows[0].reward_points || 0;
+    if (currentPoints < voucher.pointsCost) {
+      throw new Error('Not enough reward points');
+    }
+
+    const newPoints = currentPoints - voucher.pointsCost;
+    await dbPool.query('UPDATE users SET reward_points = ? WHERE id = ?', [newPoints, userId]);
+
+    return { remainingPoints: newPoints, voucher };
+  },
 };
