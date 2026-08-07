@@ -1,7 +1,11 @@
 import mysql from 'mysql2/promise';
 import dotenv from 'dotenv';
+import path from 'path';
 
-dotenv.config();
+// Robust .env loading for cPanel Passenger environment
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
 export const dbPool = mysql.createPool({
   host: process.env.DB_HOST || '127.0.0.1',
@@ -15,6 +19,11 @@ export const dbPool = mysql.createPool({
   enableKeepAlive: true,
   keepAliveInitialDelay: 0,
   connectTimeout: 5000,
+});
+
+// Prevent unhandled DB pool errors from crashing the Node.js process
+(dbPool as any).on('error', (err: any) => {
+  console.error('⚠️ MySQL Pool Error Event:', err.message || err);
 });
 
 /**

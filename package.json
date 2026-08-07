@@ -8,6 +8,8 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "check:apis": "ts-node src/scripts/checkApiErrors.ts",
+    "demo": "ts-node sample_db_demo.ts",
+    "demo:js": "node sample_db_demo.js",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix"
   },

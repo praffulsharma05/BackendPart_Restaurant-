@@ -8,7 +8,13 @@ import { testDbConnection } from './config/db';
 import { logger } from './utils/logger';
 import { sendError } from './utils/apiResponse';
 
-dotenv.config();
+import path from 'path';
+
+// Preserve Passenger's assigned PORT before dotenv overrides it
+const passengerPort = process.env.PORT;
+
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
+dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
 const app = express();
 
@@ -70,7 +76,8 @@ app.use(errorHandler);
 
 
 
-const PORT = process.env.PORT ? (isNaN(Number(process.env.PORT)) ? process.env.PORT : Number(process.env.PORT)) : 5000;
+const PORT = passengerPort || (process.env.PORT ? (isNaN(Number(process.env.PORT)) ? process.env.PORT : Number(process.env.PORT)) : 5000);
+const baseUrl = process.env.BASE_URL || (process.env.NODE_ENV && process.env.NODE_ENV.toLowerCase() === 'production' ? 'https://restaurant.landmaarkdeveloper.com' : `http://localhost:${PORT}`);
 
 /**
  *
@@ -78,8 +85,8 @@ const PORT = process.env.PORT ? (isNaN(Number(process.env.PORT)) ? process.env.P
 function bootstrap() {
   const httpServer = app.listen(PORT, () => {
     logger.info(`🚀 Restaurant Enterprise REST API Server running on port ${PORT}`);
-    logger.info(`🔗 Health Check: http://localhost:${PORT}/health`);
-    logger.info(`🔗 Base API URL: http://localhost:${PORT}/api`);
+    logger.info(`🔗 Health Check: ${baseUrl}/health`);
+    logger.info(`🔗 Base API URL: ${baseUrl}/api`);
   });
 
   // Non-blocking database connection test
@@ -94,7 +101,7 @@ function bootstrap() {
       logger.info('HTTP server closed.');
       if (signal === 'SIGUSR2') {
         process.kill(process.pid, 'SIGUSR2');
-      } else {
+      } else if (signal === 'SIGINT') {
         process.exit(0);
       }
     });
@@ -102,10 +109,18 @@ function bootstrap() {
 
   process.once('SIGUSR2', () => gracefulShutdown('SIGUSR2'));
   process.on('SIGINT', () => gracefulShutdown('SIGINT'));
-  process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 
   return httpServer;
 }
+
+// Global Process Crash Prevention
+process.on('unhandledRejection', (reason: any) => {
+  logger.error('⚠️ Unhandled Promise Rejection:', reason);
+});
+
+process.on('uncaughtException', (err: Error) => {
+  logger.error('⚠️ Uncaught Exception:', err);
+});
 
 bootstrap();
 
