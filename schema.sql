@@ -13,7 +13,7 @@ USE Restaurant;
 CREATE TABLE IF NOT EXISTS restaurant_info (
     id INT PRIMARY KEY AUTO_INCREMENT,
     name VARCHAR(150) NOT NULL DEFAULT 'Meals on Wheels',
-    tagline VARCHAR(255) DEFAULT 'Authentic Fine Dining & Gourmet Experience',
+    tagline VARCHAR(255) DEFAULT 'North Indian, Kebab, Rolls, Biryani',
     logo_url VARCHAR(500) DEFAULT 'https://res.cloudinary.com/dekctt0su/image/upload/v1785323139/restaurant_logos/gmeqdkzewyyy9pur52lh.jpg',
     phone VARCHAR(20) DEFAULT '7878606937',
     email VARCHAR(150) DEFAULT 'contact@mealsonwheels.com',

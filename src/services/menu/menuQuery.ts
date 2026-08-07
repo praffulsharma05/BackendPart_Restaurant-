@@ -2,23 +2,20 @@ import { dbPool } from '../../config/db';
 import { RowDataPacket } from 'mysql2';
 import { InventoryStatus } from '../../types';
 import { applyBackendMenuFilters } from './menuFilter';
+import { getCategories, ensureCategoriesInDb } from './menuCategories';
+
+export { getCategories, ensureCategoriesInDb };
 
 export async function ensureColumnsExist() {
   try {
     await dbPool.query("ALTER TABLE menu_items ADD COLUMN is_deleted BOOLEAN DEFAULT FALSE");
-  } catch {
-    // Ignore
-  }
+  } catch {}
   try {
     await dbPool.query("ALTER TABLE menu_items ADD COLUMN prep_time_minutes INT DEFAULT 15");
-  } catch {
-    // Ignore
-  }
+  } catch {}
   try {
     await dbPool.query("ALTER TABLE orders ADD COLUMN coupon_code VARCHAR(30)");
-  } catch {
-    // Ignore
-  }
+  } catch {}
   try {
     await dbPool.query(`
       CREATE TABLE IF NOT EXISTS master_customizations (
@@ -29,14 +26,7 @@ export async function ensureColumnsExist() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
-  } catch {
-    // Ignore
-  }
-}
-
-export async function getCategories() {
-  const [rows] = await dbPool.query<RowDataPacket[]>('SELECT * FROM menu_categories WHERE is_active = TRUE ORDER BY display_order ASC');
-  return rows;
+  } catch {}
 }
 
 export async function getAllMenuItems(
@@ -46,144 +36,103 @@ export async function getAllMenuItems(
   filters?: { minRating?: number; priceRange?: string; spiceLevel?: string; sortBy?: string }
 ) {
   await ensureColumnsExist();
-  let sql = 'SELECT * FROM menu_items WHERE (is_deleted IS NULL OR is_deleted = FALSE)';
+  let sql = 'SELECT * FROM menu_items WHERE 1=1';
   const params: any[] = [];
 
   if (!includeHidden) {
     sql += ' AND is_hidden = FALSE';
   }
-
   if (categoryName) {
     sql += ' AND category = ?';
     params.push(categoryName);
   }
-
-  if (search) {
-    sql += ' AND (name LIKE ? OR description LIKE ?)';
-    params.push(`%${search}%`, `%${search}%`);
+  if (search && search.trim() !== '') {
+    sql += ' AND (name LIKE ? OR description LIKE ? OR category LIKE ?)';
+    const searchPattern = `%${search.trim()}%`;
+    params.push(searchPattern, searchPattern, searchPattern);
   }
 
-  sql += ' ORDER BY created_at DESC';
+  const [rows] = await dbPool.query<RowDataPacket[]>(sql, params);
+  let items = rows.map((r) => mapRowToMenuItem(r));
 
-  const [items] = await dbPool.query<RowDataPacket[]>(sql, params);
-
-  const result = await Promise.all(
-    items.map(async (item) => {
-      const [ingredients] = await dbPool.query<RowDataPacket[]>(
-        'SELECT ingredient_name FROM menu_item_ingredients WHERE menu_item_id = ?',
-        [item.id]
-      );
-      const [options] = await dbPool.query<RowDataPacket[]>(
-        'SELECT id, name, price FROM customization_options WHERE menu_item_id = ? AND is_deleted = FALSE',
-        [item.id]
-      );
-
-      return {
-        id: item.id,
-        name: item.name,
-        description: item.description,
-        price: Number(item.price),
-        rating: Number(item.rating),
-        category: item.category,
-        imageUrl: item.image_url,
-        isVegetarian: Boolean(item.is_vegetarian),
-        isHidden: Boolean(item.is_hidden),
-        inventoryStatus: item.inventory_status as InventoryStatus,
-        isSoldOut: item.inventory_status === 'SOLD_OUT',
-        prepTimeMinutes: item.prep_time_minutes ? Number(item.prep_time_minutes) : 15,
-        ingredients: ingredients.map((i) => i.ingredient_name),
-        options: options.map((o) => ({ id: o.id, name: o.name, price: Number(o.price) })),
-      };
-    })
-  );
-
-  return applyBackendMenuFilters(result, filters);
+  if (filters) {
+    items = applyBackendMenuFilters(items, filters);
+  }
+  return items;
 }
 
 export async function getArchivedMenuItems() {
   await ensureColumnsExist();
-  const [items] = await dbPool.query<RowDataPacket[]>(
-    'SELECT * FROM menu_items WHERE is_deleted = TRUE ORDER BY created_at DESC'
+  const [rows] = await dbPool.query<RowDataPacket[]>(
+    'SELECT * FROM menu_items WHERE is_deleted = TRUE ORDER BY updated_at DESC'
   );
-
-  const result = await Promise.all(
-    items.map(async (item) => {
-      const [ingredients] = await dbPool.query<RowDataPacket[]>(
-        'SELECT ingredient_name FROM menu_item_ingredients WHERE menu_item_id = ?',
-        [item.id]
-      );
-      const [options] = await dbPool.query<RowDataPacket[]>(
-        'SELECT id, name, price FROM customization_options WHERE menu_item_id = ? AND is_deleted = FALSE',
-        [item.id]
-      );
-
-      return {
-        id: item.id,
-        name: item.name,
-        description: item.description,
-        price: Number(item.price),
-        rating: Number(item.rating),
-        category: item.category,
-        imageUrl: item.image_url,
-        isVegetarian: Boolean(item.is_vegetarian),
-        isHidden: Boolean(item.is_hidden),
-        inventoryStatus: item.inventory_status as InventoryStatus,
-        isSoldOut: item.inventory_status === 'SOLD_OUT',
-        prepTimeMinutes: item.prep_time_minutes ? Number(item.prep_time_minutes) : 15,
-        ingredients: ingredients.map((i) => i.ingredient_name),
-        options: options.map((o) => ({ id: o.id, name: o.name, price: Number(o.price) })),
-      };
-    })
-  );
-
-  return result;
+  return rows.map((r) => mapRowToMenuItem(r));
 }
 
 export async function getMenuItemById(id: string) {
   await ensureColumnsExist();
-  const [rows] = await dbPool.query<RowDataPacket[]>('SELECT * FROM menu_items WHERE id = ?', [id]);
+  const [rows] = await dbPool.query<RowDataPacket[]>(
+    'SELECT * FROM menu_items WHERE id = ?',
+    [id]
+  );
   if (rows.length === 0) return null;
 
-  const item = rows[0];
+  const item: any = mapRowToMenuItem(rows[0]);
+
   const [ingredients] = await dbPool.query<RowDataPacket[]>(
     'SELECT ingredient_name FROM menu_item_ingredients WHERE menu_item_id = ?',
     [id]
   );
+  item.ingredients = ingredients.map((i) => i.ingredient_name);
+
   const [options] = await dbPool.query<RowDataPacket[]>(
-    'SELECT id, name, price FROM customization_options WHERE menu_item_id = ? AND is_deleted = FALSE',
+    'SELECT id, name, price FROM customization_options WHERE menu_item_id = ?',
     [id]
   );
+  item.options = options.map((o) => ({
+    id: o.id,
+    name: o.name,
+    price: Number(o.price),
+  }));
 
-  return {
-    id: item.id,
-    name: item.name,
-    description: item.description,
-    price: Number(item.price),
-    rating: Number(item.rating),
-    category: item.category,
-    imageUrl: item.image_url,
-    isVegetarian: Boolean(item.is_vegetarian),
-    isHidden: Boolean(item.is_hidden),
-    inventoryStatus: item.inventory_status as InventoryStatus,
-    isSoldOut: item.inventory_status === 'SOLD_OUT',
-    prepTimeMinutes: item.prep_time_minutes ? Number(item.prep_time_minutes) : 15,
-    ingredients: ingredients.map((i) => i.ingredient_name),
-    options: options.map((o) => ({ id: o.id, name: o.name, price: Number(o.price) })),
-  };
+  return item;
 }
 
 export async function getCustomizationsByMenuItemId(menuItemId: string) {
   const [options] = await dbPool.query<RowDataPacket[]>(
-    'SELECT id, name, price FROM customization_options WHERE menu_item_id = ? AND is_deleted = FALSE',
+    'SELECT id, name, price FROM customization_options WHERE menu_item_id = ?',
     [menuItemId]
   );
-  return options.map((o) => ({ id: o.id, name: o.name, price: Number(o.price) }));
+  return options.map((o) => ({
+    id: o.id,
+    name: o.name,
+    price: Number(o.price),
+  }));
 }
 
 export async function getMasterCustomizations() {
   await ensureColumnsExist();
   const [rows] = await dbPool.query<RowDataPacket[]>(
-    'SELECT id, name, price FROM master_customizations WHERE is_deleted = FALSE ORDER BY created_at DESC'
+    'SELECT id, name, price FROM master_customizations ORDER BY name ASC'
   );
-  return rows.map((r) => ({ id: r.id, name: r.name, price: Number(r.price) }));
+  return rows.map((r) => ({
+    id: r.id,
+    name: r.name,
+    price: Number(r.price),
+  }));
+}
+
+function mapRowToMenuItem(r: RowDataPacket) {
+  return {
+    id: r.id,
+    name: r.name,
+    description: r.description,
+    price: Number(r.price),
+    category: r.category,
+    imageUrl: r.image_url,
+    isVegetarian: Boolean(r.is_vegetarian),
+    isHidden: Boolean(r.is_hidden),
+    inventoryStatus: r.inventory_status as InventoryStatus,
+    prepTimeMinutes: Number(r.prep_time_minutes) || 15,
+  };
 }
