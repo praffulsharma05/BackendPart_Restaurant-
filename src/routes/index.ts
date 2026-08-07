@@ -14,6 +14,15 @@ import cartRoutes from './cart.routes';
 
 const router = Router();
 
+router.get('/', (_req, res) => {
+  res.status(200).json({
+    status: 'UP',
+    message: 'Restaurant Scalable REST API Server is running',
+    version: '1.0.0',
+    timestamp: new Date().toISOString(),
+  });
+});
+
 router.use('/auth', authRoutes);
 router.use('/restaurant', restaurantRoutes);
 router.use('/superadmin', superadminRoutes);
