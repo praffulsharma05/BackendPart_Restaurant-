@@ -1,18 +1,18 @@
+import '../utils/cpanelEnv';
 import mysql from 'mysql2/promise';
 import dotenv from 'dotenv';
 import path from 'path';
+import { logger } from '../utils/logger';
 
-// Robust .env loading for cPanel Passenger environment
-dotenv.config({ path: path.resolve(__dirname, '../../.env'), override: true });
-dotenv.config({ path: path.resolve(__dirname, '../.env'), override: true });
-dotenv.config({ path: path.resolve(process.cwd(), '.env'), override: true });
+// Standard .env loading (preserves pre-existing cPanel environment variables)
+dotenv.config();
 
 export const dbPool = mysql.createPool({
-  host: process.env.DB_HOST || 'localhost',
+  host: process.env.DB_HOST || '127.0.0.1',
   port: Number(process.env.DB_PORT) || 3306,
-  user: process.env.DB_USER || 'kylkqqhv_Restaurant',
-  password: process.env.DB_PASSWORD !== undefined && process.env.DB_PASSWORD !== '' ? process.env.DB_PASSWORD : 'Pr@fful_213',
-  database: process.env.DB_NAME || 'kylkqqhv_Restaurant',
+  user: process.env.DB_USER || 'root',
+  password: process.env.DB_PASSWORD || '',
+  database: process.env.DB_NAME || 'restaurant',
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,

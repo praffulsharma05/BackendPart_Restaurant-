@@ -1,3 +1,4 @@
+import './utils/cpanelEnv';
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -13,11 +14,12 @@ import path from 'path';
 // Preserve Passenger's assigned PORT before dotenv overrides it
 const passengerPort = process.env.PORT;
 
-dotenv.config({ path: path.resolve(__dirname, '../.env'), override: true });
-dotenv.config({ path: path.resolve(__dirname, '../../.env'), override: true });
-dotenv.config({ path: path.resolve(process.cwd(), '.env'), override: true });
+dotenv.config();
 
 const app = express();
+
+// Diagnostic log to inspect all environment keys injected by cPanel/Passenger
+logger.info('[cPanel Env Inspection] Environment keys present:', Object.keys(process.env).filter(k => k.startsWith('DB_') || k.startsWith('CLOUDINARY_') || k.startsWith('ADMIN_') || k.startsWith('JWT_') || k === 'PORT' || k === 'NODE_ENV'));
 
 // CORS — allow all origins
 app.use(cors({
