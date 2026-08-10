@@ -37,12 +37,21 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus, ca
   const finalOrder = await getOrderById(orderId);
   if (finalOrder) {
     try {
+      let title = ORDER_STRINGS.NOTIFICATIONS.STATUS_UPDATED_TITLE(status);
       let msg = ORDER_STRINGS.NOTIFICATIONS.STATUS_UPDATED_BODY(orderId, status);
-      if (status === 'Cancelled') msg = ORDER_STRINGS.NOTIFICATIONS.CANCELLED_BODY(cancellationReason);
-      if (status === 'Completed') msg = ORDER_STRINGS.NOTIFICATIONS.COMPLETED_BODY;
+      if (status === 'Accepted') {
+        title = ORDER_STRINGS.NOTIFICATIONS.ACCEPTED_TITLE;
+        msg = ORDER_STRINGS.NOTIFICATIONS.ACCEPTED_BODY(orderId, prepTimeMinutes);
+      } else if (status === 'Cancelled') {
+        title = ORDER_STRINGS.NOTIFICATIONS.REJECTED_TITLE;
+        msg = ORDER_STRINGS.NOTIFICATIONS.REJECTED_BODY(orderId, cancellationReason);
+      } else if (status === 'Completed') {
+        title = 'Order Completed 🍽️';
+        msg = ORDER_STRINGS.NOTIFICATIONS.COMPLETED_BODY;
+      }
       await notificationService.createNotification(
         finalOrder.userId,
-        ORDER_STRINGS.NOTIFICATIONS.STATUS_UPDATED_TITLE(status),
+        title,
         msg,
         'order'
       );

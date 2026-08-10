@@ -10,6 +10,12 @@ export const ORDER_STRINGS = {
     PLACED_TITLE: 'Order Placed Successfully',
     PLACED_BODY: (orderId: string) =>
       `Your order #${orderId.slice(0, 8).toUpperCase()} has been placed and is pending admin approval.`,
+    ACCEPTED_TITLE: 'Order Accepted 🎉',
+    ACCEPTED_BODY: (orderId: string, prepTime?: number) =>
+      `Your order #${orderId.slice(0, 8).toUpperCase()} has been accepted by the restaurant!${prepTime ? ` Estimated prep time: ${prepTime} mins.` : ''}`,
+    REJECTED_TITLE: 'Order Rejected ❌',
+    REJECTED_BODY: (orderId: string, cancellationReason?: string) =>
+      `Your order #${orderId.slice(0, 8).toUpperCase()} was rejected. Reason: ${cancellationReason || 'Restaurant unavailable'}`,
     STATUS_UPDATED_TITLE: (status: string) => `Order ${status}`,
     STATUS_UPDATED_BODY: (orderId: string, status: string) =>
       `Your order #${orderId.slice(0, 8).toUpperCase()} status is now ${status}.`,
