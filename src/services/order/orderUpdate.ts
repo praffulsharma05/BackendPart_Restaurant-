@@ -111,9 +111,9 @@ export async function partialRejectOrder(orderId: string, rejectedItemIds: strin
       }
     }
 
-    const newTax = (newSubtotal - newDiscount) * 0.05;
-    const newServiceCharge = (newSubtotal - newDiscount) * 0.025;
-    const newTotal = Math.max(0, newSubtotal - newDiscount + newTax + newServiceCharge);
+    const newTax = 0;
+    const newServiceCharge = 0;
+    const newTotal = Math.max(0, newSubtotal - newDiscount);
 
     const refundAmount = Number(order.total) - newTotal;
 

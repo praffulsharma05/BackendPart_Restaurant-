@@ -89,9 +89,9 @@ export async function createOrder(userId: string, input: CreateOrderInput) {
 
     const { discount, rewardPointsUsed } = await processOrderDiscounts(connection, input, targetUserId, subtotal, orderId);
 
-    const tax = (subtotal - discount) * 0.05;
-    const serviceCharge = (subtotal - discount) * 0.025;
-    const total = Math.max(0, subtotal - discount + tax + serviceCharge);
+    const tax = 0;
+    const serviceCharge = 0;
+    const total = Math.max(0, subtotal - discount);
 
     const rewardPointsEarned = Math.floor(total);
     const prepTimeMinutes = maxPrepTime;

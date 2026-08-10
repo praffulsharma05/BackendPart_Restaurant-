@@ -100,8 +100,8 @@ export const cartController = {
 
       const subtotal = cartItems.reduce((sum, item) => sum + item.menuItem.price * item.quantity, 0);
       const discount = promoCode ? subtotal * 0.15 : 0;
-      const tax = subtotal * 0.08;
-      const total = Math.max(0, subtotal - discount + tax);
+      const tax = 0;
+      const total = Math.max(0, subtotal - discount);
 
       return res.json({
         success: true,
