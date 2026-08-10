@@ -193,13 +193,8 @@ export const rewardService = {
     };
   },
 
-  async getVouchers() {
-    return [
-      { id: 'v1', code: 'REWARD50', discount: 50, pointsCost: 100 },
-      { id: 'v2', code: 'REWARD100', discount: 100, pointsCost: 200 },
-      { id: 'v3', code: 'REWARD250', discount: 250, pointsCost: 450 },
-      { id: 'v4', code: 'REWARD500', discount: 500, pointsCost: 800 },
-    ];
+  async getVouchers(): Promise<Array<{ id: string; code: string; discount: number; pointsCost: number }>> {
+    return [];
   },
 
   async redeemVoucher(userId: string, voucherId: string) {
