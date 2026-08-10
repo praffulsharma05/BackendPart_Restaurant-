@@ -46,24 +46,18 @@ export const notificationService = {
    * @param role
    */
   async getUserNotifications(userId: string, role?: string) {
-    const isDbAdmin = role === 'ADMIN' || (userId && (userId.startsWith('admin') || userId.startsWith('u_admin') || userId.startsWith('guest')));
-    
-    let targetUserId = userId;
-    const [adminRows] = await dbPool.query<RowDataPacket[]>('SELECT id FROM users WHERE role = "ADMIN"');
-    if (adminRows.length > 0) {
-      const matched = adminRows.find(a => a.id === userId);
-      targetUserId = matched ? matched.id : adminRows[0].id;
+    const isAdmin = role === 'ADMIN';
+
+    let sql = `SELECT * FROM notifications WHERE user_id = ? OR user_id = "ALL"`;
+    const params: any[] = [userId];
+
+    if (isAdmin) {
+      sql = `SELECT * FROM notifications WHERE user_id = ? OR user_id = "ALL" OR user_id = "ADMIN"`;
     }
 
-    const [rows] = await dbPool.query<RowDataPacket[]>(
-      `SELECT * FROM notifications 
-       WHERE user_id = ? 
-          OR user_id = "ALL" 
-          OR user_id = "ADMIN" 
-          OR user_id IN (SELECT id FROM users WHERE role = "ADMIN") 
-       ORDER BY created_at DESC`,
-      [targetUserId]
-    );
+    sql += ` ORDER BY created_at DESC`;
+
+    const [rows] = await dbPool.query<RowDataPacket[]>(sql, params);
 
     return rows.map((r) => ({
       id: r.id,
