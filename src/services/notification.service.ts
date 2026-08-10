@@ -23,11 +23,48 @@ export const notificationService = {
   },
 
   /**
-   *
-   * @param userId
+   * Send notification to all admin accounts in system
    */
-  async getUserNotifications(userId: string) {
-    const [rows] = await dbPool.query<RowDataPacket[]>('SELECT * FROM notifications WHERE user_id = ? OR user_id = "ALL" ORDER BY created_at DESC', [userId]);
+  async notifyAdmins(title: string, message: string, type: string = 'USER_EVENT') {
+    try {
+      const [adminRows] = await dbPool.query<RowDataPacket[]>('SELECT id FROM users WHERE role = "ADMIN"');
+      if (adminRows.length === 0) {
+        console.warn('[NotificationService] No admin users found in database to notify');
+        return;
+      }
+      for (const admin of adminRows) {
+        await this.createNotification(admin.id, title, message, type);
+      }
+    } catch (err) {
+      console.error('[NotificationService] Error notifying admins:', err);
+    }
+  },
+
+  /**
+   * Get notifications for user or admin
+   * @param userId
+   * @param role
+   */
+  async getUserNotifications(userId: string, role?: string) {
+    const isDbAdmin = role === 'ADMIN' || (userId && (userId.startsWith('admin') || userId.startsWith('u_admin') || userId.startsWith('guest')));
+    
+    let targetUserId = userId;
+    const [adminRows] = await dbPool.query<RowDataPacket[]>('SELECT id FROM users WHERE role = "ADMIN"');
+    if (adminRows.length > 0) {
+      const matched = adminRows.find(a => a.id === userId);
+      targetUserId = matched ? matched.id : adminRows[0].id;
+    }
+
+    const [rows] = await dbPool.query<RowDataPacket[]>(
+      `SELECT * FROM notifications 
+       WHERE user_id = ? 
+          OR user_id = "ALL" 
+          OR user_id = "ADMIN" 
+          OR user_id IN (SELECT id FROM users WHERE role = "ADMIN") 
+       ORDER BY created_at DESC`,
+      [targetUserId]
+    );
+
     return rows.map((r) => ({
       id: r.id,
       userId: r.user_id,
@@ -62,7 +99,7 @@ export const notificationService = {
    * @param userId
    */
   async clearAllNotifications(userId: string) {
-    await dbPool.query('DELETE FROM notifications WHERE user_id = ? OR user_id = "ALL"', [userId]);
+    await dbPool.query('DELETE FROM notifications WHERE user_id = ? OR user_id = "ALL" OR user_id = "ADMIN"', [userId]);
     return { cleared: true };
   },
 };
