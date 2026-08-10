@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { authService } from '../services/auth.service';
 import { uploadToCloudinary } from '../config/cloudinary';
 import { sendSuccess, sendError } from '../utils/apiResponse';
+import { logger } from '../utils/logger';
 
 export const authController = {
   /**
@@ -13,12 +14,16 @@ export const authController = {
   async adminLogin(req: Request, res: Response, next: NextFunction) {
     try {
       const { email, password } = req.body;
+      logger.info('[Auth] Admin login attempt', { email });
       if (!email || !password) {
+        logger.warn('[Auth] Admin login failed: Missing email or password');
         return sendError(res, 'Email and password are required', 400);
       }
       const result = await authService.adminLogin(email, password);
+      logger.info('[Auth] Admin login successful', { email });
       return sendSuccess(res, 'Admin login successful', result);
     } catch (error: any) {
+      logger.error('[Auth] Error in adminLogin:', error);
       if (error.message === 'Invalid email or password') {
         return sendError(res, 'Invalid email or password', 401);
       }
@@ -35,21 +40,26 @@ export const authController = {
   async login(req: Request, res: Response, next: NextFunction) {
     try {
       const { phone, email, password, name } = req.body;
+      logger.info('[Auth] Login attempt', { phone, email });
 
       // Phone-based login
       if (phone) {
         const result = await authService.loginWithPhone(phone, name);
+        logger.info('[Auth] Phone login successful', { phone });
         return sendSuccess(res, 'Login successful', result);
       }
 
       // Email-based login
       if (email && password) {
         const result = await authService.loginWithEmail(email, password);
+        logger.info('[Auth] Email login successful', { email });
         return sendSuccess(res, 'Login successful', result);
       }
 
+      logger.warn('[Auth] Login failed: Invalid payload');
       return sendError(res, 'Please provide phone number or email with password', 400);
     } catch (error: any) {
+      logger.error('[Auth] Error in login:', error);
       if (error.message === 'Invalid email or password' || error.message === 'User not found') {
         return sendError(res, error.message, 401);
       }
@@ -63,12 +73,16 @@ export const authController = {
   async register(req: Request, res: Response, next: NextFunction) {
     try {
       const { phone, email, name, password } = req.body;
+      logger.info('[Auth] Registration attempt', { phone, email, name });
       if (!phone || !name) {
+        logger.warn('[Auth] Registration failed: Missing phone or name');
         return sendError(res, 'Phone number and name are required', 400);
       }
       const result = await authService.register(phone, email, name, password);
+      logger.info('[Auth] Registration successful', { phone });
       return sendSuccess(res, 'Registration successful', result, 201);
     } catch (error: any) {
+      logger.error('[Auth] Error in register:', error);
       return sendError(res, error.message || 'Registration failed', 400);
     }
   },
@@ -82,12 +96,16 @@ export const authController = {
   async refreshToken(req: Request, res: Response, next: NextFunction) {
     try {
       const { refreshToken } = req.body;
+      logger.info('[Auth] Token refresh attempt');
       if (!refreshToken) {
+        logger.warn('[Auth] Token refresh failed: Missing refresh token');
         return sendError(res, 'Refresh token is required', 400);
       }
       const result = await authService.refreshAccessToken(refreshToken);
+      logger.info('[Auth] Token refreshed successfully');
       return sendSuccess(res, 'Token refreshed successfully', result);
     } catch (error: any) {
+      logger.error('[Auth] Error in refreshToken:', error);
       if (error.message.includes('expired') || error.message.includes('Invalid') || error.message.includes('not found')) {
         return sendError(res, error.message, 401);
       }
@@ -104,6 +122,7 @@ export const authController = {
   async getProfile(req: Request, res: Response, next: NextFunction) {
     try {
       const userId = req.user?.id;
+      logger.info('[Auth] Fetching user profile', { userId });
       if (!userId) return sendError(res, 'Unauthorized', 401);
 
       const profile = await authService.getUserProfile(userId);
@@ -111,15 +130,18 @@ export const authController = {
 
       return sendSuccess(res, 'User profile retrieved successfully', profile);
     } catch (error) {
+      logger.error('[Auth] Error in getProfile:', error);
       next(error);
     }
   },
 
   async getAllCustomers(req: Request, res: Response, next: NextFunction) {
     try {
+      logger.info('[Auth] Fetching all customers');
       const customers = await authService.getAllCustomers();
       return sendSuccess(res, 'Customers retrieved successfully', customers);
     } catch (error) {
+      logger.error('[Auth] Error in getAllCustomers:', error);
       next(error);
     }
   },
@@ -128,9 +150,11 @@ export const authController = {
     try {
       const { id } = req.params;
       const { isBlocked } = req.body;
+      logger.info('[Auth] Toggling block customer status', { customerId: id, isBlocked });
       const result = await authService.toggleBlockCustomer(id, Boolean(isBlocked));
       return sendSuccess(res, `Customer status updated successfully`, result);
     } catch (error) {
+      logger.error('[Auth] Error in toggleBlockCustomer:', error);
       next(error);
     }
   },
@@ -138,19 +162,23 @@ export const authController = {
   async updateProfile(req: Request, res: Response, next: NextFunction) {
     try {
       const userId = req.user?.id;
+      logger.info('[Auth] Updating profile', { userId });
       if (!userId) return sendError(res, 'Unauthorized', 401);
 
       const { name, phone, email, avatarUrl } = req.body;
       const profile = await authService.updateProfile(userId, { name, phone, email, avatarUrl });
       return sendSuccess(res, 'Profile updated successfully', profile);
     } catch (error) {
+      logger.error('[Auth] Error in updateProfile:', error);
       next(error);
     }
   },
 
   async uploadAvatar(req: Request, res: Response, next: NextFunction) {
     try {
+      logger.info('[Auth] Uploading avatar');
       if (!req.file) {
+        logger.warn('[Auth] Upload avatar failed: No file uploaded');
         return sendError(res, 'No avatar file uploaded', 400);
       }
 
@@ -164,11 +192,12 @@ export const authController = {
           avatarUrl = cloudUrl;
         }
       } catch (err) {
-        // Fallback to base64 data URI
+        logger.warn('[Auth] Cloudinary upload failed, falling back to base64');
       }
 
       return sendSuccess(res, 'Avatar uploaded successfully', { avatarUrl });
     } catch (error) {
+      logger.error('[Auth] Error in uploadAvatar:', error);
       next(error);
     }
   },
@@ -176,13 +205,16 @@ export const authController = {
   async deleteCustomer(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
+      logger.info('[Auth] Deleting customer', { id });
       const result = await authService.deleteCustomer(id);
       if (!result) {
         return sendError(res, 'Customer not found or already deleted', 404);
       }
       return sendSuccess(res, 'Customer and all associated data deleted successfully');
     } catch (error) {
+      logger.error('[Auth] Error in deleteCustomer:', error);
       next(error);
     }
   },
 };
+
