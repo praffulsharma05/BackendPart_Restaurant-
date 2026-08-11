@@ -3,11 +3,11 @@
 -- Connection: Host: 127.0.0.1 | Port: 3306 | DB: Restaurant
 -- =======================================================
 
-CREATE DATABASE IF NOT EXISTS Restaurant
-CHARACTER SET utf8mb4
-COLLATE utf8mb4_unicode_ci;
+-- CREATE DATABASE IF NOT EXISTS Restaurant
+-- CHARACTER SET utf8mb4
+-- COLLATE utf8mb4_unicode_ci;
 
-USE Restaurant;
+-- USE Restaurant;
 
 -- 1. Restaurant Info & Multi-Tenant Setup
 CREATE TABLE IF NOT EXISTS restaurant_info (

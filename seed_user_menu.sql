@@ -3,7 +3,7 @@
 -- Database: Restaurant
 -- =======================================================
 
-USE Restaurant;
+-- USE Restaurant;
 
 SET FOREIGN_KEY_CHECKS = 0;
 TRUNCATE TABLE customization_options;
