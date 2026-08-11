@@ -48,6 +48,18 @@ export const waiterService = {
    */
   async attendWaiterCall(id: string) {
     await dbPool.query('UPDATE waiter_calls SET status = ? WHERE id = ?', ['ATTENDED', id]);
+    try {
+      const [rows] = await dbPool.query<RowDataPacket[]>('SELECT * FROM waiter_calls WHERE id = ?', [id]);
+      const call = rows[0];
+      const targetUser = call?.user_id || 'ALL';
+      const tableText = call?.table_number ? ` (${call.table_number})` : '';
+      await notificationService.createNotification(
+        targetUser,
+        'Waiter Assistance Completed',
+        `Your waiter call request${tableText} has been attended to and marked as done by restaurant staff.`,
+        'MESSAGE'
+      );
+    } catch (_notifErr) {}
     return { id, status: 'ATTENDED' };
   },
 };
