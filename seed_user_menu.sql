@@ -1,4 +1,10 @@
--- Restaurant Menu SQL Export
+-- =======================================================
+-- Restaurant Menu Database Seed File (Pure MySQL SQL)
+-- Database: Restaurant
+-- =======================================================
+
+-- USE Restaurant;
+
 SET FOREIGN_KEY_CHECKS = 0;
 TRUNCATE TABLE customization_options;
 TRUNCATE TABLE menu_item_ingredients;

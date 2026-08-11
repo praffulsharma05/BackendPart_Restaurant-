@@ -80,10 +80,10 @@ export function loadCpanelNodeVenvEnv(): void {
     const searchRoots = [
       cwd,
       parentDir,
-      grandParentDir,
       path.join(parentDir, 'nodevenv'),
       path.join(parentDir, '.nodevenv'),
       path.join(grandParentDir, 'nodevenv'),
+      path.join(grandParentDir, '.nodevenv'),
     ];
 
     for (const root of searchRoots) {
