@@ -84,7 +84,13 @@ export async function createOrder(userId: string, input: CreateOrderInput) {
         unitPrice: itemUnitPrice,
         quantity: itemInput.quantity,
         subtotal: itemSubtotal,
-        customInstructions: itemInput.customInstructions || '',
+        customInstructions:
+          itemInput.customInstructions ||
+          itemInput.specialInstructions ||
+          itemInput.specialRequest ||
+          itemInput.instructions ||
+          itemInput.notes ||
+          '',
         options: selectedOptionsList,
       });
     }
