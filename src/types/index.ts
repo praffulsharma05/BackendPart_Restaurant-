@@ -50,4 +50,5 @@ export interface CreateOrderInput {
   customerName?: string;
   customerPhone?: string;
   paymentScreenshotUrl?: string;
+  specialInstructions?: string;
 }

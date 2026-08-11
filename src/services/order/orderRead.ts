@@ -41,7 +41,7 @@ export async function getOrderById(orderId: string) {
         unitPrice: Number(i.unit_price),
         quantity: i.quantity,
         subtotal: Number(i.subtotal),
-        customInstructions: i.custom_instructions,
+        customInstructions: i.custom_instructions || '',
         options: opts.map((o) => ({ name: o.option_name, price: Number(o.option_price) })),
       };
     })
@@ -52,8 +52,7 @@ export async function getOrderById(orderId: string) {
     userId: order.user_id,
     customerName: customer.name,
     customerPhone: customer.phone,
-    orderType: order.order_type,
-    fulfillmentDetails,
+    fulfillmentDetails: fulfillmentDetails || null,
     items: itemsList,
     subtotal: Number(order.subtotal),
     discount: Number(order.discount),
@@ -71,6 +70,7 @@ export async function getOrderById(orderId: string) {
     updatedAt: order.updated_at,
     paymentScreenshotUrl: order.payment_screenshot_url,
     orderToken: order.order_token,
+    specialInstructions: order.special_instructions || '',
   };
 }
 

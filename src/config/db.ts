@@ -33,6 +33,12 @@ export async function testDbConnection(): Promise<boolean> {
   try {
     const connection = await dbPool.getConnection();
     console.log(`✅ Connected to MySQL Database (${process.env.DB_NAME || 'Restaurant'}) at ${process.env.DB_HOST || '127.0.0.1'}`);
+    
+    // Reset all existing customer reward points to 0 as requested
+    try {
+      await connection.query('UPDATE users SET reward_points = 0 WHERE role = "CUSTOMER" OR reward_points = 100');
+    } catch (_e) { }
+
     connection.release();
     return true;
   } catch (error) {

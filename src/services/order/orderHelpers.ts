@@ -31,7 +31,7 @@ export async function resolveOrderUser(connection: PoolConnection, userId: strin
 
       await connection.query(
         `INSERT INTO users (id, phone, name, role, reward_points) 
-         VALUES (?, ?, ?, 'CUSTOMER', 100)`,
+         VALUES (?, ?, ?, 'CUSTOMER', 0)`,
         [targetUserId, finalPhone, displayName]
       );
     } else {
@@ -50,7 +50,7 @@ export async function resolveOrderUser(connection: PoolConnection, userId: strin
     try {
       await connection.query(
         `INSERT INTO users (id, phone, name, role, reward_points) 
-         VALUES (?, ?, ?, 'CUSTOMER', 100)`,
+         VALUES (?, ?, ?, 'CUSTOMER', 0)`,
         [targetUserId, fallbackPhone, displayName]
       );
     } catch (_ignore) { }

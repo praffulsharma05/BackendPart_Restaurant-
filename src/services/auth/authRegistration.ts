@@ -141,7 +141,7 @@ export async function register(phoneInput: string, emailInput: string, nameInput
   const userId = `u_${Date.now()}`;
   await dbPool.query(
     'INSERT INTO users (id, phone, name, email, role, reward_points, gold_member) VALUES (?, ?, ?, ?, ?, ?, ?)',
-    [userId, phone, name, email || null, 'CUSTOMER', 100, false]
+    [userId, phone, name, email || null, 'CUSTOMER', 0, false]
   );
 
   const payload = { id: userId, phone, role: 'CUSTOMER' as UserRole, name };
@@ -180,7 +180,7 @@ export async function register(phoneInput: string, emailInput: string, nameInput
       name,
       email: email || null,
       role: 'CUSTOMER',
-      rewardPoints: 100,
+      rewardPoints: 0,
       goldMember: false,
     },
     accessToken,

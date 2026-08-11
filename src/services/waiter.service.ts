@@ -55,8 +55,8 @@ export const waiterService = {
       const tableText = call?.table_number ? ` (${call.table_number})` : '';
       await notificationService.createNotification(
         targetUser,
-        'Waiter Assistance Completed',
-        `Your waiter call request${tableText} has been attended to and marked as done by restaurant staff.`,
+        'Admin Acknowledged Your Message',
+        `Admin acknowledged your message. Your request${tableText} has been attended to and marked as done by restaurant staff.`,
         'MESSAGE'
       );
     } catch (_notifErr) {}

@@ -80,6 +80,30 @@ export const notificationService = {
   },
 
   /**
+   * Acknowledge a notification & dispatch confirmation to customer
+   * @param id
+   * @param customMessage
+   */
+  async acknowledgeNotification(id: string, customMessage?: string) {
+    await dbPool.query('UPDATE notifications SET is_read = TRUE WHERE id = ?', [id]);
+    try {
+      const [rows] = await dbPool.query<RowDataPacket[]>('SELECT * FROM notifications WHERE id = ?', [id]);
+      const notif = rows[0];
+      const targetUser = (notif && notif.user_id !== 'ADMIN' && notif.user_id !== 'ALL') ? notif.user_id : 'ALL';
+      const notifTitle = notif?.title ? ` (Re: ${notif.title})` : '';
+      const body = customMessage || `Admin acknowledged your message${notifTitle}. Your request has been attended to and marked as done by restaurant staff.`;
+      
+      await this.createNotification(
+        targetUser,
+        'Admin Acknowledged Your Message',
+        body,
+        'MESSAGE'
+      );
+    } catch (_notifErr) {}
+    return { id, acknowledged: true };
+  },
+
+  /**
    * Delete a notification by id
    * @param id
    */

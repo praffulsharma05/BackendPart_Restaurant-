@@ -47,6 +47,7 @@ export const ORDER_STRINGS = {
         coupon_code VARCHAR(100) NULL,
         payment_screenshot_url VARCHAR(500) NULL,
         order_token VARCHAR(128) NULL,
+        special_instructions TEXT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -65,6 +66,9 @@ export const ORDER_STRINGS = {
     `,
     ADD_ORDER_TOKEN_COLUMN: `
       ALTER TABLE orders ADD COLUMN order_token VARCHAR(128) NULL;
+    `,
+    ADD_SPECIAL_INSTRUCTIONS_COLUMN: `
+      ALTER TABLE orders ADD COLUMN special_instructions TEXT NULL;
     `,
     CREATE_USERS_TABLE: `
       CREATE TABLE IF NOT EXISTS users (

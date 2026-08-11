@@ -98,12 +98,33 @@ export async function createOrder(userId: string, input: CreateOrderInput) {
 
     const safeOrderType = input.orderType || 'Pickup';
     const safePaymentMethod = input.paymentMethod || 'UPI';
+    let specialInstructions =
+      input.specialInstructions ||
+      (input as any).customRequests ||
+      (input as any).instructions ||
+      (input as any).notes ||
+      (input.carDetails as any)?.notes ||
+      (input.carDetails as any)?.specialInstructions ||
+      (input.dineInDetails as any)?.notes ||
+      (input.dineInDetails as any)?.specialInstructions ||
+      (input.preOrderDetails as any)?.notes ||
+      (input.preOrderDetails as any)?.specialInstructions ||
+      null;
+
+    if (!specialInstructions && Array.isArray(input.items)) {
+      const itemNotes = input.items
+        .map((i: any) => i.customInstructions || i.specialInstructions || i.specialRequest || i.notes)
+        .filter(Boolean);
+      if (itemNotes.length > 0) {
+        specialInstructions = itemNotes.join(', ');
+      }
+    }
 
     await connection.query(
       `INSERT INTO orders 
-        (id, user_id, order_type, subtotal, discount, tax, service_charge, reward_points_earned, reward_points_used, total, status, prep_time_minutes, payment_method, payment_status, coupon_code, payment_screenshot_url, order_token)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending', ?, ?, 'PAID', ?, ?, ?)`,
-      [orderId, targetUserId, safeOrderType, subtotal, discount, tax, serviceCharge, rewardPointsEarned, rewardPointsUsed, total, prepTimeMinutes, safePaymentMethod, input.couponCode || null, input.paymentScreenshotUrl || null, orderToken]
+        (id, user_id, order_type, subtotal, discount, tax, service_charge, reward_points_earned, reward_points_used, total, status, prep_time_minutes, payment_method, payment_status, coupon_code, payment_screenshot_url, order_token, special_instructions)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending', ?, ?, 'PAID', ?, ?, ?, ?)`,
+      [orderId, targetUserId, safeOrderType, subtotal, discount, tax, serviceCharge, rewardPointsEarned, rewardPointsUsed, total, prepTimeMinutes, safePaymentMethod, input.couponCode || null, input.paymentScreenshotUrl || null, orderToken, specialInstructions]
     );
 
     try {
@@ -159,6 +180,15 @@ export async function createOrder(userId: string, input: CreateOrderInput) {
         ORDER_STRINGS.NOTIFICATIONS.PLACED_TITLE,
         ORDER_STRINGS.NOTIFICATIONS.PLACED_BODY(orderId),
         'order'
+      );
+
+      // Send live alert to ADMIN notification feed with customer special instructions
+      const noteSuffix = specialInstructions ? ` | Instruction: "${specialInstructions}"` : '';
+      await notificationService.createNotification(
+        'ADMIN',
+        `New ${safeOrderType} Order #${orderId.slice(0, 8).toUpperCase()}`,
+        `New ${safeOrderType} order placed for ₹${total.toFixed(2)}.${noteSuffix}`,
+        'USER_EVENT'
       );
     } catch (_notifErr) {}
 

@@ -25,6 +25,10 @@ export async function initTables() {
       await dbPool.query(ORDER_STRINGS.SQL.ADD_ORDER_TOKEN_COLUMN);
     } catch (_e) {}
 
+    try {
+      await dbPool.query(ORDER_STRINGS.SQL.ADD_SPECIAL_INSTRUCTIONS_COLUMN);
+    } catch (_e) {}
+
     await dbPool.query(ORDER_STRINGS.SQL.CREATE_USERS_TABLE);
     await dbPool.query(ORDER_STRINGS.SQL.CREATE_ORDER_ITEMS_TABLE);
     await dbPool.query(ORDER_STRINGS.SQL.CREATE_ORDER_ITEM_OPTIONS_TABLE);

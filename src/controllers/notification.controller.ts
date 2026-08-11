@@ -41,6 +41,21 @@ export const notificationController = {
   },
 
   /**
+   * Acknowledge notification & notify customer
+   */
+  async acknowledgeNotification(req: Request, res: Response, next: NextFunction) {
+    try {
+      logger.info('[Notification] Acknowledging notification & notifying user', { id: req.params.id });
+      const { customMessage } = req.body || {};
+      const result = await notificationService.acknowledgeNotification(req.params.id, customMessage);
+      return sendSuccess(res, 'Notification acknowledged and sent to user', result);
+    } catch (error) {
+      logger.error('[Notification] Error in acknowledgeNotification:', error);
+      next(error);
+    }
+  },
+
+  /**
    * Delete a notification permanently
    * @param req
    * @param res

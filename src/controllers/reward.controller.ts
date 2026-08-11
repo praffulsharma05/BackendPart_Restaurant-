@@ -27,18 +27,22 @@ export const rewardController = {
   async getTransactions(req: Request, res: Response, next: NextFunction) {
     try {
       const userId = req.user?.id || 'u101';
+      logger.info('[Reward] Fetching reward transactions', { userId });
       const summary = await rewardService.getUserRewardSummary(userId);
       return sendSuccess(res, 'Reward transactions retrieved', summary?.history || []);
     } catch (error) {
+      logger.error('[Reward] Error in getTransactions:', error);
       next(error);
     }
   },
 
   async getVouchers(req: Request, res: Response, next: NextFunction) {
     try {
+      logger.info('[Reward] Fetching reward vouchers');
       const vouchers = await rewardService.getVouchers();
       return sendSuccess(res, 'Reward vouchers retrieved', vouchers);
     } catch (error) {
+      logger.error('[Reward] Error in getVouchers:', error);
       next(error);
     }
   },
@@ -69,10 +73,16 @@ export const rewardController = {
     try {
       const userId = req.user?.id || 'u101';
       const { voucherId } = req.body;
-      if (!voucherId) return sendError(res, 'Voucher ID is required', 400);
+      logger.info('[Reward] Redeeming voucher', { userId, voucherId });
+      if (!voucherId) {
+        logger.warn('[Reward] Voucher redeem failed: Missing voucherId');
+        return sendError(res, 'Voucher ID is required', 400);
+      }
       const result = await rewardService.redeemVoucher(userId, voucherId);
+      logger.info('[Reward] Voucher redeemed successfully', { userId, voucherId });
       return sendSuccess(res, 'Voucher redeemed successfully', result);
     } catch (error: any) {
+      logger.error('[Reward] Error in redeemVoucher:', error);
       if (error.message === 'Not enough reward points' || error.message === 'Voucher not found') {
         return sendError(res, error.message, 400);
       }
