@@ -6,6 +6,7 @@ import { RowDataPacket } from 'mysql2';
 import { PREDEFINED_ADMINS } from './authLogin';
 import { deleteCustomer } from './authCustomerDelete';
 import { notificationService } from '../notification.service';
+import { AUTH_STRINGS } from './authStrings';
 
 export { deleteCustomer };
 
@@ -129,12 +130,12 @@ export async function register(phoneInput: string, emailInput: string, nameInput
 
   const [existingPhone] = await dbPool.query<RowDataPacket[]>('SELECT id FROM users WHERE phone = ?', [phone]);
   if (existingPhone.length > 0) {
-    throw new Error('Phone number is already registered');
+    throw new Error(AUTH_STRINGS.ERRORS.PHONE_REGISTERED);
   }
   if (email) {
     const [existingEmail] = await dbPool.query<RowDataPacket[]>('SELECT id FROM users WHERE email = ?', [email]);
     if (existingEmail.length > 0) {
-      throw new Error('Email is already registered');
+      throw new Error(AUTH_STRINGS.ERRORS.EMAIL_REGISTERED);
     }
   }
 
@@ -162,14 +163,14 @@ export async function register(phoneInput: string, emailInput: string, nameInput
   // Notify user and admin about new account registration
   notificationService.createNotification(
     userId,
-    'Welcome to Meals on Wheels!',
-    `Hi ${name}! Your account has been registered successfully. Enjoy gourmet dining!`,
+    AUTH_STRINGS.NOTIFICATIONS.WELCOME_TITLE,
+    AUTH_STRINGS.NOTIFICATIONS.WELCOME_BODY(name),
     'GENERAL'
   ).catch(() => {});
 
   notificationService.notifyAdmins(
-    'New Account Registered',
-    `New user ${name} (${phone}${email ? ' / ' + email : ''}) has created an account.`,
+    AUTH_STRINGS.NOTIFICATIONS.ADMIN_REGISTER_TITLE,
+    AUTH_STRINGS.NOTIFICATIONS.ADMIN_REGISTER_BODY(name, phone, email),
     'USER_REGISTER'
   ).catch((err) => console.error('[Auth] Registration notification error:', err));
 

@@ -9,6 +9,8 @@ import { ORDER_STRINGS } from './orderStrings';
 import { resolveOrderUser } from './orderHelpers';
 import { processOrderDiscounts } from './orderDiscounts';
 
+import { rewardService } from '../reward.service';
+
 export async function createOrder(userId: string, input: CreateOrderInput) {
   await initTables();
 
@@ -93,7 +95,16 @@ export async function createOrder(userId: string, input: CreateOrderInput) {
     const serviceCharge = 0;
     const total = Math.max(0, subtotal - discount);
 
-    const rewardPointsEarned = Math.floor(total);
+    let rewardPointsEarned = 0;
+    try {
+      const settings = await rewardService.getRewardSettings();
+      if (settings && settings.isActive && settings.rewardPercentage > 0) {
+        const rawPoints = Math.floor((total * settings.rewardPercentage) / 100);
+        rewardPointsEarned = Math.min(rawPoints, settings.maxPointsPerOrder);
+      }
+    } catch (_e) {
+      rewardPointsEarned = 0;
+    }
     const prepTimeMinutes = maxPrepTime;
 
     const safeOrderType = input.orderType || 'Pickup';

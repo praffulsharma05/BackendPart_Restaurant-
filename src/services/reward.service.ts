@@ -21,12 +21,12 @@ export const rewardService = {
     await dbPool.query(`
       CREATE TABLE IF NOT EXISTS reward_settings (
         id INT PRIMARY KEY DEFAULT 1,
-        reward_percentage DECIMAL(5,2) NOT NULL DEFAULT 10.00,
-        max_points_per_order INT NOT NULL DEFAULT 500,
-        monthly_point_limit INT NOT NULL DEFAULT 1000,
-        point_expiry_days INT NOT NULL DEFAULT 180,
-        redemption_ratio DECIMAL(5,2) NOT NULL DEFAULT 1.00,
-        is_active BOOLEAN NOT NULL DEFAULT TRUE,
+        reward_percentage DECIMAL(5,2) NOT NULL DEFAULT 0.00,
+        max_points_per_order INT NOT NULL DEFAULT 0,
+        monthly_point_limit INT NOT NULL DEFAULT 0,
+        point_expiry_days INT NOT NULL DEFAULT 0,
+        redemption_ratio DECIMAL(5,2) NOT NULL DEFAULT 0.00,
+        is_active BOOLEAN NOT NULL DEFAULT FALSE,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     `);
@@ -42,35 +42,35 @@ export const rewardService = {
       if (rows.length > 0) {
         const r = rows[0];
         return {
-          rewardPercentage: Number(r.reward_percentage || 10.0),
-          maxPointsPerOrder: Number(r.max_points_per_order || 500),
-          monthlyPointLimit: Number(r.monthly_point_limit || 1000),
-          pointExpiryDays: Number(r.point_expiry_days || 180),
-          redemptionRatio: Number(r.redemption_ratio || 1.0),
+          rewardPercentage: Number(r.reward_percentage || 0),
+          maxPointsPerOrder: Number(r.max_points_per_order || 0),
+          monthlyPointLimit: Number(r.monthly_point_limit || 0),
+          pointExpiryDays: Number(r.point_expiry_days || 0),
+          redemptionRatio: Number(r.redemption_ratio || 0),
           isActive: Boolean(r.is_active),
         };
       } else {
         await dbPool.query(`
           INSERT INTO reward_settings (id, reward_percentage, max_points_per_order, monthly_point_limit, point_expiry_days, redemption_ratio, is_active)
-          VALUES (1, 10.00, 500, 1000, 180, 1.00, TRUE)
+          VALUES (1, 0.00, 0, 0, 0, 0.00, FALSE)
         `);
         return {
-          rewardPercentage: 10.0,
-          maxPointsPerOrder: 500,
-          monthlyPointLimit: 1000,
-          pointExpiryDays: 180,
-          redemptionRatio: 1.0,
-          isActive: true,
+          rewardPercentage: 0,
+          maxPointsPerOrder: 0,
+          monthlyPointLimit: 0,
+          pointExpiryDays: 0,
+          redemptionRatio: 0,
+          isActive: false,
         };
       }
     } catch (_e) {
       return {
-        rewardPercentage: 10.0,
-        maxPointsPerOrder: 500,
-        monthlyPointLimit: 1000,
-        pointExpiryDays: 180,
-        redemptionRatio: 1.0,
-        isActive: true,
+        rewardPercentage: 0,
+        maxPointsPerOrder: 0,
+        monthlyPointLimit: 0,
+        pointExpiryDays: 0,
+        redemptionRatio: 0,
+        isActive: false,
       };
     }
   },
@@ -80,12 +80,12 @@ export const rewardService = {
    */
   async updateRewardSettings(data: any) {
     await this.initTables();
-    const rewardPercentage = data.rewardPercentage !== undefined ? Number(data.rewardPercentage) : 10.0;
-    const maxPointsPerOrder = data.maxPointsPerOrder !== undefined ? Number(data.maxPointsPerOrder) : 500;
-    const monthlyPointLimit = data.monthlyPointLimit !== undefined ? Number(data.monthlyPointLimit) : 1000;
-    const pointExpiryDays = data.pointExpiryDays !== undefined ? Number(data.pointExpiryDays) : 180;
-    const redemptionRatio = data.redemptionRatio !== undefined ? Number(data.redemptionRatio) : 1.0;
-    const isActive = data.isActive !== undefined ? Boolean(data.isActive) : true;
+    const rewardPercentage = data.rewardPercentage !== undefined ? Number(data.rewardPercentage) : 0;
+    const maxPointsPerOrder = data.maxPointsPerOrder !== undefined ? Number(data.maxPointsPerOrder) : 0;
+    const monthlyPointLimit = data.monthlyPointLimit !== undefined ? Number(data.monthlyPointLimit) : 0;
+    const pointExpiryDays = data.pointExpiryDays !== undefined ? Number(data.pointExpiryDays) : 0;
+    const redemptionRatio = data.redemptionRatio !== undefined ? Number(data.redemptionRatio) : 0;
+    const isActive = data.isActive !== undefined ? Boolean(data.isActive) : false;
 
     try {
       const [rows] = await dbPool.query<RowDataPacket[]>('SELECT id FROM reward_settings WHERE id = 1');
