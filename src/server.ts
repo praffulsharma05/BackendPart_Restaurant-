@@ -9,42 +9,48 @@ import { testDbConnection } from './config/db';
 import { logger } from './utils/logger';
 import { sendError } from './utils/apiResponse';
 
-import path from 'path';
-
-// Preserve Passenger's assigned PORT before dotenv overrides it
+// 1. Preserve Passenger / cPanel assigned PORT before dotenv overrides
 const passengerPort = process.env.PORT;
-
 dotenv.config();
 
 const app = express();
 
-// Diagnostic log to inspect all environment keys injected by cPanel/Passenger
-logger.info('[cPanel Env Inspection] Environment keys present:', Object.keys(process.env).filter(k => k.startsWith('DB_') || k.startsWith('CLOUDINARY_') || k.startsWith('ADMIN_') || k.startsWith('JWT_') || k === 'PORT' || k === 'NODE_ENV'));
+// 2. Diagnostic environment inspection for cPanel / Passenger deployments
+logger.info(
+  '[cPanel Env Inspection] Environment keys present:',
+  Object.keys(process.env).filter(
+    (k) =>
+      k.startsWith('DB_') ||
+      k.startsWith('CLOUDINARY_') ||
+      k.startsWith('ADMIN_') ||
+      k.startsWith('JWT_') ||
+      k === 'PORT' ||
+      k === 'NODE_ENV'
+  )
+);
 
-// CORS — allow all origins
-app.use(cors({
-  origin: true,
-  credentials: true,
-}));
-
+// 3. Security & Parser Middlewares
+app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
-
-// HTTP Request Logger Middleware
 app.use(requestLogger);
 
-// Root Endpoint (Required for cPanel / Phusion Passenger health check)
-app.get('/', (_req: Request, res: Response, next) => {
-  if (_req.headers.accept && _req.headers.accept.includes('text/html')) {
+
+
+// 5. Health Check & Root Endpoints
+app.get('/', (req: Request, res: Response, next) => {
+  if (req.headers.accept && req.headers.accept.includes('text/html')) {
     res.setHeader('Content-Type', 'text/html');
-    res.status(200).send('<!DOCTYPE html><html><head><title>Restaurant Backend API</title></head><body><h1>Restaurant REST API Server is Running</h1></body></html>');
-    return;
+    return res
+      .status(200)
+      .send(
+        '<!DOCTYPE html><html><head><title>Restaurant Backend API</title></head><body><h1>Restaurant REST API Server is Running</h1></body></html>'
+      );
   }
   next();
 });
 
-// Health Check Endpoint
-app.get('/health', async (_req: Request, res: Response) => {
+app.get('/health', (_req: Request, res: Response) => {
   res.status(200).json({
     status: 'UP',
     service: 'Restaurant Scalable REST API',
@@ -52,26 +58,23 @@ app.get('/health', async (_req: Request, res: Response) => {
   });
 });
 
-// API Routes (Mounted on both /api and / for cPanel subpath compatibility)
+// 6. API Routes (Dual-mounted on /api and / for cPanel subpath compatibility)
 app.use('/api', apiRouter);
 app.use('/', apiRouter);
 
-// Fallback 404 Handler for undefined API routes
+// 7. Fallback 404 & Error Handling
 app.use((req: Request, res: Response) => {
   return sendError(res, `API route not found: ${req.method} ${req.originalUrl}`, 404);
 });
-
-// Centralized Error Handler
 app.use(errorHandler);
 
+// 8. Server Setup & Bootstrapping
+const PORT = passengerPort || Number(process.env.PORT) || 5000;
+const isProd = process.env.NODE_ENV?.toLowerCase() === 'production';
+const baseUrl =
+  process.env.BASE_URL ||
+  (isProd ? 'https://restaurant.landmaarkdeveloper.com' : `http://localhost:${PORT}`);
 
-
-const PORT = passengerPort || (process.env.PORT ? (isNaN(Number(process.env.PORT)) ? process.env.PORT : Number(process.env.PORT)) : 5000);
-const baseUrl = process.env.BASE_URL || (process.env.NODE_ENV && process.env.NODE_ENV.toLowerCase() === 'production' ? 'https://restaurant.landmaarkdeveloper.com' : `http://localhost:${PORT}`);
-
-/**
- *
- */
 function bootstrap() {
   const httpServer = app.listen(PORT, () => {
     logger.info(`🚀 Restaurant Enterprise REST API Server running on port ${PORT}`);
@@ -84,14 +87,14 @@ function bootstrap() {
     logger.error('DB Connection Test Error:', err);
   });
 
-  // Graceful shutdown on nodemon restart & process exit
+  // Graceful shutdown handling
   const gracefulShutdown = (signal: string) => {
     logger.info(`Received ${signal}. Closing HTTP server...`);
     httpServer.close(() => {
       logger.info('HTTP server closed.');
       if (signal === 'SIGUSR2') {
         process.kill(process.pid, 'SIGUSR2');
-      } else if (signal === 'SIGINT') {
+      } else {
         process.exit(0);
       }
     });
@@ -99,11 +102,12 @@ function bootstrap() {
 
   process.once('SIGUSR2', () => gracefulShutdown('SIGUSR2'));
   process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+  process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 
   return httpServer;
 }
 
-// Global Process Crash Prevention
+// 9. Global Crash Prevention
 process.on('unhandledRejection', (reason: any) => {
   logger.error('⚠️ Unhandled Promise Rejection:', reason);
 });

@@ -2,6 +2,7 @@ import { dbPool } from '../../config/db';
 import { RowDataPacket } from 'mysql2';
 import bcrypt from 'bcryptjs';
 import { createAndSaveTokens, refreshAccessToken } from './authTokens';
+import { notificationService } from '../notification.service';
 
 export { refreshAccessToken };
 
@@ -119,6 +120,20 @@ export async function loginWithPhone(phoneInput: string, nameInput?: string) {
 
   const { accessToken, refreshToken } = await createAndSaveTokens(user);
 
+  // Dynamically notify user and admin about login
+  notificationService.createNotification(
+    user.id,
+    'Logged In Successfully',
+    `Welcome back, ${user.name || 'valued customer'}! You have logged in successfully.`,
+    'GENERAL'
+  ).catch(() => {});
+
+  notificationService.notifyAdmins(
+    'User Logged In',
+    `User ${user.name || 'Customer'} (${user.phone}) has logged in.`,
+    'USER_LOGIN'
+  ).catch((err) => console.error('[Auth] Login notification error:', err));
+
   return {
     user: {
       id: user.id,
@@ -157,6 +172,20 @@ export async function loginWithEmail(emailInput: string, password: string) {
   }
 
   const { accessToken, refreshToken } = await createAndSaveTokens(user);
+
+  // Dynamically notify user and admin about login
+  notificationService.createNotification(
+    user.id,
+    'Logged In Successfully',
+    `Welcome back, ${user.name || 'valued customer'}! You have logged in successfully.`,
+    'GENERAL'
+  ).catch(() => {});
+
+  notificationService.notifyAdmins(
+    'User Logged In',
+    `User ${user.name || 'Customer'} (${user.email || user.phone}) has logged in.`,
+    'USER_LOGIN'
+  ).catch((err) => console.error('[Auth] Login notification error:', err));
 
   return {
     user: {

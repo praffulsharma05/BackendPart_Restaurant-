@@ -19,8 +19,8 @@ export async function updateRestaurantInfo(data: any) {
           logoUrl || '',
           phone || '',
           address || '',
-          taxPercentage || 5.0,
-          serviceChargePercentage || 2.5,
+          taxPercentage || 0.0,
+          serviceChargePercentage || 0.0,
           upiId || '',
           qrPaymentImageUrl || '',
         ]
@@ -55,8 +55,8 @@ export async function createRestaurant(data: any) {
   const phone = data.phone || '';
   const email = data.email || '';
   const address = data.address || '';
-  const taxPercentage = data.taxPercentage !== undefined ? data.taxPercentage : 5.0;
-  const serviceChargePercentage = data.serviceChargePercentage !== undefined ? data.serviceChargePercentage : 2.5;
+  const taxPercentage = data.taxPercentage !== undefined ? data.taxPercentage : 0.0;
+  const serviceChargePercentage = data.serviceChargePercentage !== undefined ? data.serviceChargePercentage : 0.0;
   const upiId = data.upiId || '';
 
   try {

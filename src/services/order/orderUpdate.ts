@@ -37,12 +37,21 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus, ca
   const finalOrder = await getOrderById(orderId);
   if (finalOrder) {
     try {
+      let title = ORDER_STRINGS.NOTIFICATIONS.STATUS_UPDATED_TITLE(status);
       let msg = ORDER_STRINGS.NOTIFICATIONS.STATUS_UPDATED_BODY(orderId, status);
-      if (status === 'Cancelled') msg = ORDER_STRINGS.NOTIFICATIONS.CANCELLED_BODY(cancellationReason);
-      if (status === 'Completed') msg = ORDER_STRINGS.NOTIFICATIONS.COMPLETED_BODY;
+      if (status === 'Accepted') {
+        title = ORDER_STRINGS.NOTIFICATIONS.ACCEPTED_TITLE;
+        msg = ORDER_STRINGS.NOTIFICATIONS.ACCEPTED_BODY(orderId, prepTimeMinutes);
+      } else if (status === 'Cancelled') {
+        title = ORDER_STRINGS.NOTIFICATIONS.REJECTED_TITLE;
+        msg = ORDER_STRINGS.NOTIFICATIONS.REJECTED_BODY(orderId, cancellationReason);
+      } else if (status === 'Completed') {
+        title = 'Order Completed 🍽️';
+        msg = ORDER_STRINGS.NOTIFICATIONS.COMPLETED_BODY;
+      }
       await notificationService.createNotification(
         finalOrder.userId,
-        ORDER_STRINGS.NOTIFICATIONS.STATUS_UPDATED_TITLE(status),
+        title,
         msg,
         'order'
       );
@@ -111,9 +120,9 @@ export async function partialRejectOrder(orderId: string, rejectedItemIds: strin
       }
     }
 
-    const newTax = (newSubtotal - newDiscount) * 0.05;
-    const newServiceCharge = (newSubtotal - newDiscount) * 0.025;
-    const newTotal = Math.max(0, newSubtotal - newDiscount + newTax + newServiceCharge);
+    const newTax = 0;
+    const newServiceCharge = 0;
+    const newTotal = Math.max(0, newSubtotal - newDiscount);
 
     const refundAmount = Number(order.total) - newTotal;
 

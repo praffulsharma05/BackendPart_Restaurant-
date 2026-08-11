@@ -28,7 +28,7 @@ export async function resolveOrderUser(connection: PoolConnection, userId: strin
       }
       const finalPhone = uniquePhone || `+91${Date.now()}${Math.floor(Math.random() * 1000)}`;
       const displayName = input.customerName || 'Gourmet Customer';
-      
+
       await connection.query(
         `INSERT INTO users (id, phone, name, role, reward_points) 
          VALUES (?, ?, ?, 'CUSTOMER', 100)`,
@@ -53,7 +53,7 @@ export async function resolveOrderUser(connection: PoolConnection, userId: strin
          VALUES (?, ?, ?, 'CUSTOMER', 100)`,
         [targetUserId, fallbackPhone, displayName]
       );
-    } catch (_ignore) {}
+    } catch (_ignore) { }
   }
   return targetUserId || `u_${Date.now()}`;
 }

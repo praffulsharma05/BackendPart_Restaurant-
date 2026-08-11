@@ -13,8 +13,9 @@ export const notificationController = {
   async getUserNotifications(req: Request, res: Response, next: NextFunction) {
     try {
       const userId = req.user?.id || 'u101';
-      logger.info('[Notification] Fetching user notifications', { userId });
-      const notifications = await notificationService.getUserNotifications(userId);
+      const role = req.user?.role;
+      logger.info('[Notification] Fetching user notifications', { userId, role });
+      const notifications = await notificationService.getUserNotifications(userId, role);
       return sendSuccess(res, 'Notifications retrieved', notifications);
     } catch (error) {
       logger.error('[Notification] Error in getUserNotifications:', error);

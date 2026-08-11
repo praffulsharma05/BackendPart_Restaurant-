@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { RowDataPacket } from 'mysql2';
 import { PREDEFINED_ADMINS } from './authLogin';
 import { deleteCustomer } from './authCustomerDelete';
+import { notificationService } from '../notification.service';
 
 export { deleteCustomer };
 
@@ -157,6 +158,20 @@ export async function register(phoneInput: string, emailInput: string, nameInput
     refreshToken,
     expiresAt,
   ]);
+
+  // Notify user and admin about new account registration
+  notificationService.createNotification(
+    userId,
+    'Welcome to Meals on Wheels!',
+    `Hi ${name}! Your account has been registered successfully. Enjoy gourmet dining!`,
+    'GENERAL'
+  ).catch(() => {});
+
+  notificationService.notifyAdmins(
+    'New Account Registered',
+    `New user ${name} (${phone}${email ? ' / ' + email : ''}) has created an account.`,
+    'USER_REGISTER'
+  ).catch((err) => console.error('[Auth] Registration notification error:', err));
 
   return {
     user: {
