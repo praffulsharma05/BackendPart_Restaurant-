@@ -86,28 +86,44 @@ export const notificationService = {
    */
   async acknowledgeNotification(id: string, customMessage?: string) {
     try {
+      // 1. Check notifications table
       const [rows] = await dbPool.query<RowDataPacket[]>('SELECT * FROM notifications WHERE id = ?', [id]);
       const notif = rows[0];
-      if (!notif) {
-        return { id, acknowledged: false };
-      }
 
-      if (notif.is_read) {
+      if (notif) {
+        if (!notif.is_read) {
+          await dbPool.query('UPDATE notifications SET is_read = TRUE WHERE id = ?', [id]);
+          const targetUser = (notif.user_id !== 'ADMIN' && notif.user_id !== 'ALL') ? notif.user_id : 'ALL';
+          const notifTitle = notif.title ? ` (Re: ${notif.title})` : '';
+          const body = customMessage || `Admin acknowledged your message${notifTitle}. Your request has been attended to and marked as done by restaurant staff.`;
+          
+          await this.createNotification(
+            targetUser,
+            'Admin Acknowledged Your Message',
+            body,
+            'MESSAGE'
+          );
+        }
         return { id, acknowledged: true };
       }
 
-      await dbPool.query('UPDATE notifications SET is_read = TRUE WHERE id = ?', [id]);
-
-      const targetUser = (notif.user_id !== 'ADMIN' && notif.user_id !== 'ALL') ? notif.user_id : 'ALL';
-      const notifTitle = notif.title ? ` (Re: ${notif.title})` : '';
-      const body = customMessage || `Admin acknowledged your message${notifTitle}. Your request has been attended to and marked as done by restaurant staff.`;
-      
-      await this.createNotification(
-        targetUser,
-        'Admin Acknowledged Your Message',
-        body,
-        'MESSAGE'
-      );
+      // 2. Fallback to waiter_calls table
+      const [waiterRows] = await dbPool.query<RowDataPacket[]>('SELECT * FROM waiter_calls WHERE id = ?', [id]);
+      const call = waiterRows[0];
+      if (call) {
+        if (call.status !== 'ATTENDED') {
+          await dbPool.query('UPDATE waiter_calls SET status = ? WHERE id = ?', ['ATTENDED', id]);
+          const targetUser = call.user_id || 'ALL';
+          const tableText = call.table_number ? ` (${call.table_number})` : '';
+          await this.createNotification(
+            targetUser,
+            'Admin Acknowledged Your Message',
+            `Admin acknowledged your message. Your request${tableText} has been attended to and marked as done by restaurant staff.`,
+            'MESSAGE'
+          );
+        }
+        return { id, acknowledged: true };
+      }
     } catch (_notifErr) {}
     return { id, acknowledged: true };
   },

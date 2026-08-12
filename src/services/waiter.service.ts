@@ -67,28 +67,6 @@ export const waiterService = {
    * @param id
    */
   async attendWaiterCall(id: string) {
-    try {
-      const [rows] = await dbPool.query<RowDataPacket[]>('SELECT * FROM waiter_calls WHERE id = ?', [id]);
-      const call = rows[0];
-      if (!call) {
-        return { id, status: 'NOT_FOUND' };
-      }
-
-      if (call.status === 'ATTENDED') {
-        return { id, status: 'ATTENDED' };
-      }
-
-      await dbPool.query('UPDATE waiter_calls SET status = ? WHERE id = ?', ['ATTENDED', id]);
-
-      const targetUser = call.user_id || 'ALL';
-      const tableText = call.table_number ? ` (${call.table_number})` : '';
-      await notificationService.createNotification(
-        targetUser,
-        'Admin Acknowledged Your Message',
-        `Admin acknowledged your message. Your request${tableText} has been attended to and marked as done by restaurant staff.`,
-        'MESSAGE'
-      );
-    } catch (_notifErr) {}
-    return { id, status: 'ATTENDED' };
+    return notificationService.acknowledgeNotification(id);
   },
 };
