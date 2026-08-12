@@ -2,6 +2,7 @@ import './utils/cpanelEnv';
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
 import apiRouter from './routes';
 import { errorHandler } from './middlewares/error.middleware';
 import { requestLogger } from './middlewares/logger.middleware';
@@ -34,6 +35,9 @@ app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(requestLogger);
+
+// Serve static images
+app.use('/images', express.static(path.join(process.cwd(), 'public/images')));
 
 
 
