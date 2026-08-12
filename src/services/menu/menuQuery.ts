@@ -3,18 +3,22 @@ import { RowDataPacket } from 'mysql2';
 import { InventoryStatus } from '../../types';
 import { applyBackendMenuFilters } from './menuFilter';
 import { getCategories, ensureCategoriesInDb } from './menuCategories';
+import { DEFAULTS, SQL_QUERIES } from '../../constants';
 
 export { getCategories, ensureCategoriesInDb };
 
 export async function ensureColumnsExist() {
   try {
-    await dbPool.query("ALTER TABLE menu_items ADD COLUMN is_deleted BOOLEAN DEFAULT FALSE");
+    await dbPool.query(SQL_QUERIES.ALTER_IS_DELETED);
   } catch {}
   try {
-    await dbPool.query("ALTER TABLE menu_items ADD COLUMN prep_time_minutes INT DEFAULT 15");
+    await dbPool.query(SQL_QUERIES.ALTER_PREP_TIME);
   } catch {}
   try {
-    await dbPool.query("ALTER TABLE orders ADD COLUMN coupon_code VARCHAR(30)");
+    await dbPool.query(SQL_QUERIES.ALTER_SPICE_LEVEL);
+  } catch {}
+  try {
+    await dbPool.query(SQL_QUERIES.ALTER_COUPON_CODE);
   } catch {}
   try {
     await dbPool.query(`
@@ -128,11 +132,13 @@ function mapRowToMenuItem(r: RowDataPacket) {
     name: r.name,
     description: r.description,
     price: Number(r.price),
+    rating: r.rating !== null && r.rating !== undefined ? Number(r.rating) : DEFAULTS.RATING,
+    spiceLevel: r.spice_level || DEFAULTS.SPICE_LEVEL,
     category: r.category,
     imageUrl: r.image_url,
     isVegetarian: Boolean(r.is_vegetarian),
     isHidden: Boolean(r.is_hidden),
     inventoryStatus: r.inventory_status as InventoryStatus,
-    prepTimeMinutes: Number(r.prep_time_minutes) || 15,
+    prepTimeMinutes: Number(r.prep_time_minutes) || DEFAULTS.PREP_TIME_MINUTES,
   };
 }

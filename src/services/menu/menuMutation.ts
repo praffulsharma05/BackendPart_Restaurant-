@@ -3,11 +3,13 @@ import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import { InventoryStatus } from '../../types';
 import { v4 as uuidv4 } from 'uuid';
 import { ensureColumnsExist, getMenuItemById } from './menuQuery';
+import { DEFAULTS } from '../../constants';
 
 export async function createMenuItem(data: any) {
   await ensureColumnsExist();
   const id = `m_${Date.now()}`;
-  const { name, description, price, category, prepTimeMinutes = 15, ingredients = [], options = [] } = data;
+  const { name, description, price, category, prepTimeMinutes = DEFAULTS.PREP_TIME_MINUTES, ingredients = [], options = [], rating = DEFAULTS.RATING, spiceLevel = DEFAULTS.SPICE_LEVEL, spice_level } = data;
+  const spice = spiceLevel || spice_level || DEFAULTS.SPICE_LEVEL;
   
   const imageUrl = data.imageUrl || data.image || '';
   const isVegetarian = data.isVegetarian !== undefined ? data.isVegetarian : (data.isVeg !== undefined ? data.isVeg : false);
@@ -16,9 +18,9 @@ export async function createMenuItem(data: any) {
   const categoryId = cats.length > 0 ? cats[0].id : 1;
 
   await dbPool.query(
-    `INSERT INTO menu_items (id, category_id, name, description, price, category, image_url, is_vegetarian, is_hidden, inventory_status, prep_time_minutes)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, FALSE, 'AVAILABLE', ?)`,
-    [id, categoryId, name, description, price, category, imageUrl, isVegetarian ? 1 : 0, Number(prepTimeMinutes) || 15]
+    `INSERT INTO menu_items (id, category_id, name, description, price, category, image_url, is_vegetarian, is_hidden, inventory_status, prep_time_minutes, rating, spice_level)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, FALSE, ?, ?, ?, ?)`,
+    [id, categoryId, name, description, price, category, imageUrl, isVegetarian ? 1 : 0, DEFAULTS.INVENTORY_STATUS, Number(prepTimeMinutes) || DEFAULTS.PREP_TIME_MINUTES, Number(rating) || DEFAULTS.RATING, spice]
   );
 
   for (const ing of ingredients) {
@@ -40,7 +42,8 @@ export async function createMenuItem(data: any) {
 
 export async function updateMenuItem(id: string, data: any) {
   await ensureColumnsExist();
-  const { name, description, price, category, isHidden, inventoryStatus, prepTimeMinutes } = data;
+  const { name, description, price, category, isHidden, inventoryStatus, prepTimeMinutes, rating, spiceLevel, spice_level } = data;
+  const spice = spiceLevel || spice_level;
   
   const imageUrl = data.imageUrl !== undefined ? data.imageUrl : data.image;
   const isVegetarian = data.isVegetarian !== undefined ? data.isVegetarian : data.isVeg;
@@ -55,9 +58,11 @@ export async function updateMenuItem(id: string, data: any) {
       is_vegetarian = COALESCE(?, is_vegetarian),
       is_hidden = COALESCE(?, is_hidden),
       inventory_status = COALESCE(?, inventory_status),
-      prep_time_minutes = COALESCE(?, prep_time_minutes)
+      prep_time_minutes = COALESCE(?, prep_time_minutes),
+      rating = COALESCE(?, rating),
+      spice_level = COALESCE(?, spice_level)
      WHERE id = ?`,
-    [name, description, price, category, imageUrl, isVegetarian !== undefined ? (isVegetarian ? 1 : 0) : null, isHidden, inventoryStatus, prepTimeMinutes ? Number(prepTimeMinutes) : null, id]
+    [name, description, price, category, imageUrl, isVegetarian !== undefined ? (isVegetarian ? 1 : 0) : null, isHidden, inventoryStatus, prepTimeMinutes ? Number(prepTimeMinutes) : null, rating !== undefined ? Number(rating) : null, spice !== undefined ? spice : null, id]
   );
 
   return getMenuItemById(id);

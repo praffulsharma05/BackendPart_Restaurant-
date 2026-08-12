@@ -8,3 +8,5 @@ export const STAFF_ROLES: UserRole[] = [ROLE_ADMIN, ROLE_KITCHEN, ROLE_WAITER];
 export const ERROR_MESSAGES = {
   ACCESS_DENIED: 'Access denied. You are not authorized to view this order.',
 } as const;
+
+export * from './menu.constants';

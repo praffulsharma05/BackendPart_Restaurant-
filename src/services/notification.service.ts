@@ -52,7 +52,7 @@ export const notificationService = {
     const params: any[] = [userId];
 
     if (isAdmin) {
-      sql = `SELECT * FROM notifications WHERE user_id = ? OR user_id = "ALL" OR user_id = "ADMIN"`;
+      sql = `SELECT * FROM notifications WHERE user_id = ? OR user_id = "ADMIN" OR (user_id = "ALL" AND type != 'MESSAGE')`;
     }
 
     sql += ` ORDER BY created_at DESC`;
@@ -85,12 +85,21 @@ export const notificationService = {
    * @param customMessage
    */
   async acknowledgeNotification(id: string, customMessage?: string) {
-    await dbPool.query('UPDATE notifications SET is_read = TRUE WHERE id = ?', [id]);
     try {
       const [rows] = await dbPool.query<RowDataPacket[]>('SELECT * FROM notifications WHERE id = ?', [id]);
       const notif = rows[0];
-      const targetUser = (notif && notif.user_id !== 'ADMIN' && notif.user_id !== 'ALL') ? notif.user_id : 'ALL';
-      const notifTitle = notif?.title ? ` (Re: ${notif.title})` : '';
+      if (!notif) {
+        return { id, acknowledged: false };
+      }
+
+      if (notif.is_read) {
+        return { id, acknowledged: true };
+      }
+
+      await dbPool.query('UPDATE notifications SET is_read = TRUE WHERE id = ?', [id]);
+
+      const targetUser = (notif.user_id !== 'ADMIN' && notif.user_id !== 'ALL') ? notif.user_id : 'ALL';
+      const notifTitle = notif.title ? ` (Re: ${notif.title})` : '';
       const body = customMessage || `Admin acknowledged your message${notifTitle}. Your request has been attended to and marked as done by restaurant staff.`;
       
       await this.createNotification(

@@ -42,6 +42,9 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus, ca
       if (status === 'Accepted') {
         title = ORDER_STRINGS.NOTIFICATIONS.ACCEPTED_TITLE;
         msg = ORDER_STRINGS.NOTIFICATIONS.ACCEPTED_BODY(orderId, prepTimeMinutes);
+      } else if (status === 'Preparing') {
+        title = ORDER_STRINGS.NOTIFICATIONS.PREPARING_TITLE;
+        msg = ORDER_STRINGS.NOTIFICATIONS.PREPARING_BODY(orderId);
       } else if (status === 'Cancelled') {
         title = ORDER_STRINGS.NOTIFICATIONS.REJECTED_TITLE;
         msg = ORDER_STRINGS.NOTIFICATIONS.REJECTED_BODY(orderId, cancellationReason);

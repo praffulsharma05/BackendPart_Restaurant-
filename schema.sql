@@ -106,6 +106,7 @@ CREATE TABLE IF NOT EXISTS menu_items (
     description TEXT,
     price DECIMAL(10, 2) NOT NULL,
     rating DECIMAL(3, 2) DEFAULT 4.8,
+    spice_level VARCHAR(20) DEFAULT 'medium',
     category VARCHAR(50) NOT NULL,
     image_url VARCHAR(500),
     is_vegetarian BOOLEAN DEFAULT FALSE,

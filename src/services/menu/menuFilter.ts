@@ -1,3 +1,5 @@
+import { SPICE_LEVELS, SPICE_KEYWORDS, PRICE_RANGES, SORT_BY_KEYS } from '../../constants';
+
 export function applyBackendMenuFilters(
   items: any[],
   filters?: { minRating?: number; priceRange?: string; spiceLevel?: string; sortBy?: string }
@@ -10,59 +12,49 @@ export function applyBackendMenuFilters(
   }
 
   if (filters.priceRange) {
-    if (filters.priceRange === 'under100') {
+    if (filters.priceRange === PRICE_RANGES.UNDER100) {
       filtered = filtered.filter((item) => item.price < 100);
-    } else if (filters.priceRange === '100_300') {
+    } else if (filters.priceRange === PRICE_RANGES.RANGE_100_300) {
       filtered = filtered.filter((item) => item.price >= 100 && item.price <= 300);
-    } else if (filters.priceRange === 'above300') {
+    } else if (filters.priceRange === PRICE_RANGES.ABOVE300) {
       filtered = filtered.filter((item) => item.price > 300);
     }
   }
 
   if (filters.spiceLevel) {
-    const level = filters.spiceLevel.toLowerCase();
+    const level = filters.spiceLevel.toLowerCase().replace('_', '-');
     filtered = filtered.filter((item) => {
+      if (item.spiceLevel) {
+        return item.spiceLevel.toLowerCase().replace('_', '-') === level;
+      }
+
       const nameLower = item.name.toLowerCase();
       const descLower = item.description ? item.description.toLowerCase() : '';
       
-      if (level === 'mild') {
+      const isSpicy =
+        SPICE_KEYWORDS.SPICY.some((kw) => nameLower.includes(kw)) ||
+        descLower.includes('spicy') ||
+        descLower.includes('chilli') ||
+        SPICE_KEYWORDS.VERY_SPICY.some((kw) => nameLower.includes(kw)) ||
+        SPICE_KEYWORDS.VERY_SPICY.some((kw) => descLower.includes(kw));
+
+      if (level === SPICE_LEVELS.SPICY) {
+        return isSpicy;
+      } else if (level === SPICE_LEVELS.NONE) {
+        return !isSpicy;
+      } else if (level === SPICE_LEVELS.MILD) {
         return (
-          nameLower.includes('mild') || 
-          nameLower.includes('sweet') || 
-          nameLower.includes('butter') || 
-          nameLower.includes('cream') || 
-          nameLower.includes('naan') || 
-          nameLower.includes('roti') || 
-          nameLower.includes('paratha') ||
+          SPICE_KEYWORDS.MILD.some((kw) => nameLower.includes(kw)) ||
           (!nameLower.includes('masala') && !nameLower.includes('chilli') && !nameLower.includes('spicy') && !nameLower.includes('tadka') && !nameLower.includes('kadai'))
         );
-      } else if (level === 'medium') {
+      } else if (level === SPICE_LEVELS.MEDIUM) {
         return (
-          nameLower.includes('medium') || 
-          nameLower.includes('dal') || 
-          nameLower.includes('paneer') || 
-          nameLower.includes('rice') || 
-          nameLower.includes('jeera')
+          SPICE_KEYWORDS.MEDIUM.some((kw) => nameLower.includes(kw))
         );
-      } else if (level === 'spicy') {
+      } else if (level === SPICE_LEVELS.EXTRA_SPICY) {
         return (
-          nameLower.includes('spicy') || 
-          nameLower.includes('masala') || 
-          nameLower.includes('chilli') || 
-          nameLower.includes('pepper') || 
-          nameLower.includes('tadka') || 
-          nameLower.includes('kadai') || 
-          descLower.includes('spicy') || 
-          descLower.includes('chilli')
-        );
-      } else if (level === 'extra_spicy') {
-        return (
-          nameLower.includes('extra spicy') || 
-          nameLower.includes('kolhapuri') || 
-          nameLower.includes('vindaloo') || 
-          nameLower.includes('peri') || 
-          descLower.includes('extra spicy') || 
-          descLower.includes('very spicy')
+          SPICE_KEYWORDS.EXTRA_SPICY.some((kw) => nameLower.includes(kw)) ||
+          SPICE_KEYWORDS.VERY_SPICY.some((kw) => descLower.includes(kw))
         );
       }
       return true;
@@ -70,11 +62,11 @@ export function applyBackendMenuFilters(
   }
 
   if (filters.sortBy) {
-    if (filters.sortBy === 'rating_high') {
+    if (filters.sortBy === SORT_BY_KEYS.RATING_HIGH) {
       filtered.sort((a, b) => b.rating - a.rating);
-    } else if (filters.sortBy === 'price_low') {
+    } else if (filters.sortBy === SORT_BY_KEYS.PRICE_LOW) {
       filtered.sort((a, b) => a.price - b.price);
-    } else if (filters.sortBy === 'price_high') {
+    } else if (filters.sortBy === SORT_BY_KEYS.PRICE_HIGH) {
       filtered.sort((a, b) => b.price - a.price);
     }
   }
