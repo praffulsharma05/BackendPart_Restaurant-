@@ -126,5 +126,17 @@ export const ORDER_STRINGS = {
         scheduled_time VARCHAR(50) NOT NULL
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     `,
+    CREATE_SAVED_VEHICLES_TABLE: `
+      CREATE TABLE IF NOT EXISTS saved_vehicles (
+        id VARCHAR(50) PRIMARY KEY,
+        user_id VARCHAR(50) NOT NULL,
+        car_number VARCHAR(100) NOT NULL,
+        car_model VARCHAR(100) NOT NULL DEFAULT 'Car',
+        is_default BOOLEAN DEFAULT TRUE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_user_id (user_id)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `,
   },
 };
+

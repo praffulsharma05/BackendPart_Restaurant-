@@ -35,6 +35,7 @@ export async function initTables() {
     await dbPool.query(ORDER_STRINGS.SQL.CREATE_CAR_FULFILLMENT_TABLE);
     await dbPool.query(ORDER_STRINGS.SQL.CREATE_DINE_IN_FULFILLMENT_TABLE);
     await dbPool.query(ORDER_STRINGS.SQL.CREATE_PRE_ORDER_FULFILLMENT_TABLE);
+    await dbPool.query(ORDER_STRINGS.SQL.CREATE_SAVED_VEHICLES_TABLE);
 
     tablesInitialized = true;
   } catch (_e) {
