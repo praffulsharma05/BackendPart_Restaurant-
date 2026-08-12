@@ -132,7 +132,7 @@ function mapRowToMenuItem(r: RowDataPacket) {
     name: r.name,
     description: r.description,
     price: Number(r.price),
-    rating: r.rating !== null && r.rating !== undefined ? Number(r.rating) : DEFAULTS.RATING,
+    rating: r.rating !== null && r.rating !== undefined ? Number(r.rating) : null,
     spiceLevel: r.spice_level || DEFAULTS.SPICE_LEVEL,
     category: r.category,
     imageUrl: r.image_url,
