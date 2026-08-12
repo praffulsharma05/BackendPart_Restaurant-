@@ -63,6 +63,31 @@ export async function testDbConnection(): Promise<boolean> {
       `);
     } catch (_e) { }
 
+    // Initialize restaurant_tables table and seed it if empty
+    try {
+      await connection.query(`
+        CREATE TABLE IF NOT EXISTS restaurant_tables (
+          id VARCHAR(36) PRIMARY KEY,
+          table_number VARCHAR(20) UNIQUE NOT NULL,
+          status VARCHAR(50) DEFAULT 'Available',
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+      
+      const [tableCountRows]: any = await connection.query('SELECT COUNT(*) as count FROM restaurant_tables');
+      if (tableCountRows && tableCountRows[0] && tableCountRows[0].count === 0) {
+        logger.info('[DB] Seeding restaurant_tables table with Table 1 to 30...');
+        for (let i = 1; i <= 30; i++) {
+          await connection.query(
+            'INSERT INTO restaurant_tables (id, table_number, status) VALUES (?, ?, ?)',
+            [`t${i}`, `Table ${i}`, 'Available']
+          );
+        }
+      }
+    } catch (tableErr: any) {
+      logger.error('Failed to initialize restaurant_tables table:', tableErr.message || tableErr);
+    }
+
     connection.release();
     return true;
   } catch (error) {

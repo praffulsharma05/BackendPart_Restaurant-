@@ -235,6 +235,14 @@ CREATE TABLE IF NOT EXISTS reward_transactions (
     FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE SET NULL
 );
 
+-- 17.5. Restaurant Tables
+CREATE TABLE IF NOT EXISTS restaurant_tables (
+    id VARCHAR(36) PRIMARY KEY,
+    table_number VARCHAR(20) UNIQUE NOT NULL,
+    status VARCHAR(50) DEFAULT 'Available',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- 18. Waiter Call Requests
 CREATE TABLE IF NOT EXISTS waiter_calls (
     id VARCHAR(36) PRIMARY KEY,
