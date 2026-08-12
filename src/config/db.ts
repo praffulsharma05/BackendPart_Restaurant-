@@ -18,11 +18,11 @@ function getRequiredEnv(key: string, defaultValue?: string): string {
 
 // Strict Environment Variable Driven Database Configuration
 const dbConfig = {
-  host: getRequiredEnv('DB_HOST', '127.0.0.1'),
+  host: getRequiredEnv('DB_HOST'),
   port: Number(getRequiredEnv('DB_PORT', '3306')),
-  user: getRequiredEnv('DB_USER', 'root'),
+  user: getRequiredEnv('DB_USER'),
   password: process.env.DB_PASSWORD !== undefined ? process.env.DB_PASSWORD : '',
-  database: getRequiredEnv('DB_NAME', 'Restaurant'),
+  database: getRequiredEnv('DB_NAME'),
   waitForConnections: process.env.DB_WAIT_FOR_CONNECTIONS ? process.env.DB_WAIT_FOR_CONNECTIONS === 'true' : true,
   connectionLimit: Number(process.env.DB_CONNECTION_LIMIT) || 10,
   queueLimit: Number(process.env.DB_QUEUE_LIMIT) || 0,
