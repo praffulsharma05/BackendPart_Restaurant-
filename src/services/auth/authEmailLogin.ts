@@ -43,6 +43,8 @@ export async function loginWithEmail(emailInput: string, password: string) {
     'USER_LOGIN'
   ).catch((err) => console.error('[Auth] Login notification error:', err));
 
+  const [vehicles] = await dbPool.query<RowDataPacket[]>('SELECT * FROM saved_vehicles WHERE user_id = ?', [user.id]);
+
   return {
     user: {
       id: user.id,
@@ -53,6 +55,12 @@ export async function loginWithEmail(emailInput: string, password: string) {
       role: user.role,
       rewardPoints: user.reward_points,
       goldMember: Boolean(user.gold_member),
+      savedVehicles: vehicles.map((v) => ({
+        id: v.id,
+        carNumber: v.car_number,
+        carModel: v.car_model,
+        isDefault: Boolean(v.is_default),
+      })),
     },
     accessToken,
     refreshToken,

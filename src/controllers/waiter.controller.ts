@@ -12,16 +12,16 @@ export const waiterController = {
    */
   async callWaiter(req: Request, res: Response, next: NextFunction) {
     try {
-      const { tableNumber, tableOrCarInfo } = req.body;
+      const { tableNumber, tableOrCarInfo, carNumber } = req.body;
       const targetTable = tableNumber || tableOrCarInfo;
-      logger.info('[Waiter] Call waiter request', { targetTable, userId: req.user?.id });
+      logger.info('[Waiter] Call waiter request', { targetTable, userId: req.user?.id, carNumber });
       if (!targetTable) {
         logger.warn('[Waiter] Call waiter failed: Missing table number or location info');
         return sendError(res, 'Table number or location info is required', 400);
       }
 
       const userId = req.user?.id;
-      const call = await waiterService.callWaiter(targetTable, userId);
+      const call = await waiterService.callWaiter(targetTable, userId, carNumber);
 
       return sendSuccess(res, `Waiter called to ${targetTable}`, call, 201);
     } catch (error) {

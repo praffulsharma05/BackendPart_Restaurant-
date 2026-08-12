@@ -9,7 +9,7 @@ export const waiterService = {
    * @param tableNumber
    * @param userId
    */
-  async callWaiter(tableNumber: string, userId?: string) {
+  async callWaiter(tableNumber: string, userId?: string, carNumber?: string) {
     const id = `wc_${Date.now()}`;
     await dbPool.query('INSERT INTO waiter_calls (id, table_number, user_id, status) VALUES (?, ?, ?, ?)', [
       id,
@@ -17,6 +17,26 @@ export const waiterService = {
       userId || null,
       'PENDING',
     ]);
+
+    if (userId && carNumber && carNumber.trim()) {
+      try {
+        const cleanCarNum = carNumber.trim();
+        const [existing] = await dbPool.query<RowDataPacket[]>(
+          'SELECT id FROM saved_vehicles WHERE user_id = ? AND car_number = ?',
+          [userId, cleanCarNum]
+        );
+        if (existing.length === 0) {
+          const vehId = `v_${Date.now()}`;
+          await dbPool.query(
+            'INSERT INTO saved_vehicles (id, user_id, car_number, car_model, is_default) VALUES (?, ?, ?, ?, ?)',
+            [vehId, userId, cleanCarNum, 'Car', true]
+          );
+        }
+      } catch (vehErr) {
+        console.error('[WaiterService] Error saving vehicle for user:', vehErr);
+      }
+    }
+
     try {
       await notificationService.createNotification(
         'ALL',
