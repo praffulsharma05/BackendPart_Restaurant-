@@ -5,9 +5,10 @@ import { authenticate, optionalAuthenticate } from '../middlewares/auth.middlewa
 const router = Router();
 
 router.get('/', optionalAuthenticate, notificationController.getUserNotifications);
-router.patch('/:id/read', authenticate, notificationController.markRead);
-router.patch('/:id/acknowledge', authenticate, notificationController.acknowledgeNotification);
-router.post('/:id/acknowledge', authenticate, notificationController.acknowledgeNotification);
+router.get('/:id/acknowledge', optionalAuthenticate, notificationController.acknowledgeNotification);
+router.patch('/:id/acknowledge', optionalAuthenticate, notificationController.acknowledgeNotification);
+router.post('/:id/acknowledge', optionalAuthenticate, notificationController.acknowledgeNotification);
+router.patch('/:id/read', optionalAuthenticate, notificationController.markRead);
 router.delete('/clear-all', optionalAuthenticate, notificationController.clearAllNotifications);
 router.delete('/:id', optionalAuthenticate, notificationController.deleteNotification);
 router.delete('/', optionalAuthenticate, notificationController.clearAllNotifications);
