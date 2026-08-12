@@ -65,8 +65,36 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus, ca
 }
 
 export async function updateOrderPrepTime(orderId: string, minutes: PrepTimeMinutes) {
+  // Query original order to find previous prep time
+  const [orders] = await dbPool.query<RowDataPacket[]>('SELECT user_id, prep_time_minutes FROM orders WHERE id = ?', [orderId]);
+  let extraMinutes = 0;
+  if (orders.length > 0) {
+    const prevMinutes = orders[0].prep_time_minutes || 0;
+    if (minutes > prevMinutes) {
+      extraMinutes = minutes - prevMinutes;
+    }
+  }
+
   await dbPool.query('UPDATE orders SET prep_time_minutes = ? WHERE id = ?', [minutes, orderId]);
-  return getOrderById(orderId);
+
+  const finalOrder = await getOrderById(orderId);
+  if (finalOrder) {
+    try {
+      const title = 'Preparation Time Updated ⏳';
+      let msg = `The preparation time for your order #${orderId.slice(0, 8).toUpperCase()} has been updated to ${minutes} mins.`;
+      if (extraMinutes > 0) {
+        msg = `The chef needs ${extraMinutes} more minutes to prepare your order #${orderId.slice(0, 8).toUpperCase()}. New preparation time is ${minutes} mins.`;
+      }
+      await notificationService.createNotification(
+        finalOrder.userId,
+        title,
+        msg,
+        'order'
+      );
+    } catch (_notifErr) {}
+  }
+
+  return finalOrder;
 }
 
 export async function partialRejectOrder(orderId: string, rejectedItemIds: string[]) {
