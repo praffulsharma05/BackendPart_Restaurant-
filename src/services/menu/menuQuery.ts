@@ -56,6 +56,8 @@ export async function getAllMenuItems(
     params.push(searchPattern, searchPattern, searchPattern);
   }
 
+  sql += ' ORDER BY is_vegetarian ASC, id ASC';
+
   const [rows] = await dbPool.query<RowDataPacket[]>(sql, params);
   let items = rows.map((r) => mapRowToMenuItem(r));
 
