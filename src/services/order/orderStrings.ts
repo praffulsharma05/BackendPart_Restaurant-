@@ -18,7 +18,7 @@ export const ORDER_STRINGS = {
       `Your order #${orderId.slice(0, 8).toUpperCase()} is now being prepared in the kitchen.`,
     REJECTED_TITLE: 'Order Rejected ❌',
     REJECTED_BODY: (orderId: string, cancellationReason?: string) =>
-      `Your order #${orderId.slice(0, 8).toUpperCase()} was rejected. Reason: ${cancellationReason || 'Restaurant unavailable'}`,
+      `Your order #${orderId.slice(0, 8).toUpperCase()} was rejected.\nReason: ${cancellationReason || 'Restaurant unavailable'}`,
     STATUS_UPDATED_TITLE: (status: string) => `Order ${status}`,
     STATUS_UPDATED_BODY: (orderId: string, status: string) =>
       `Your order #${orderId.slice(0, 8).toUpperCase()} status is now ${status}.`,

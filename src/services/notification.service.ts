@@ -48,11 +48,11 @@ export const notificationService = {
   async getUserNotifications(userId: string, role?: string) {
     const isAdmin = role === 'ADMIN';
 
-    let sql = `SELECT * FROM notifications WHERE user_id = ? OR user_id = "ALL"`;
+    let sql = `SELECT * FROM notifications WHERE (user_id = ? OR user_id = "ALL") AND user_id != "ADMIN" AND type != "waiter-call" AND title != "Attendant Summoned"`;
     const params: any[] = [userId];
 
     if (isAdmin) {
-      sql = `SELECT * FROM notifications WHERE user_id = ? OR user_id = "ADMIN" OR (user_id = "ALL" AND type != 'MESSAGE')`;
+      sql = `SELECT * FROM notifications WHERE user_id = ? OR user_id = "ADMIN" OR user_id = "ALL"`;
     }
 
     sql += ` ORDER BY created_at DESC`;
@@ -95,11 +95,11 @@ export const notificationService = {
           await dbPool.query('UPDATE notifications SET is_read = TRUE WHERE id = ?', [id]);
           const targetUser = (notif.user_id !== 'ADMIN' && notif.user_id !== 'ALL') ? notif.user_id : 'ALL';
           const notifTitle = notif.title ? ` (Re: ${notif.title})` : '';
-          const body = customMessage || `Admin acknowledged your message${notifTitle}. Your request has been attended to and marked as done by restaurant staff.`;
+          const body = customMessage || `Admin has attended to your request${notifTitle} and marked it as done.`;
           
           await this.createNotification(
             targetUser,
-            'Admin Acknowledged Your Message',
+            'Request Marked as Done 🛎️',
             body,
             'MESSAGE'
           );
@@ -115,10 +115,11 @@ export const notificationService = {
           await dbPool.query('UPDATE waiter_calls SET status = ? WHERE id = ?', ['ATTENDED', id]);
           const targetUser = call.user_id || 'ALL';
           const tableText = call.table_number ? ` (${call.table_number})` : '';
+          const body = customMessage || `Restaurant staff has attended to your request${tableText} and marked it as done.`;
           await this.createNotification(
             targetUser,
-            'Admin Acknowledged Your Message',
-            `Admin acknowledged your message. Your request${tableText} has been attended to and marked as done by restaurant staff.`,
+            'Request Marked as Done 🛎️',
+            body,
             'MESSAGE'
           );
         }

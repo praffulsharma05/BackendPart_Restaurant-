@@ -39,7 +39,7 @@ export const waiterService = {
 
     try {
       await notificationService.createNotification(
-        'ALL',
+        'ADMIN',
         'Attendant Summoned',
         `Request at location: ${tableNumber}`,
         'waiter-call'
