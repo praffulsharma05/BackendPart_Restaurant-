@@ -10,7 +10,7 @@ import { UserRole } from '../types';
  * @param next
  */
 export function authenticate(req: Request, res: Response, next: NextFunction) {
-  const authHeader = req.headers.authorization;
+  const authHeader = req.headers.authorization || (req.headers['http_authorization'] as string);
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return sendError(res, 'Access denied. Missing or invalid Authorization header token.', 401);
   }
@@ -27,7 +27,7 @@ export function authenticate(req: Request, res: Response, next: NextFunction) {
 }
 
 export function optionalAuthenticate(req: Request, res: Response, next: NextFunction) {
-  const authHeader = req.headers.authorization;
+  const authHeader = req.headers.authorization || (req.headers['http_authorization'] as string);
   if (authHeader && authHeader.startsWith('Bearer ')) {
     const token = authHeader.split(' ')[1];
     const payload = verifyAccessToken(token);
