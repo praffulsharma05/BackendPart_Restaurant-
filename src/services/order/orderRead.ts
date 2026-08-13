@@ -52,6 +52,7 @@ export async function getOrderById(orderId: string) {
     userId: order.user_id,
     customerName: customer.name,
     customerPhone: customer.phone,
+    orderType: order.order_type || (fulfillmentDetails?.tableNumber ? 'Dine In' : fulfillmentDetails?.carNumber ? 'Car Order' : 'Pickup'),
     fulfillmentDetails: fulfillmentDetails || null,
     items: itemsList,
     subtotal: Number(order.subtotal),
