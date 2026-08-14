@@ -1,2 +1,2 @@
 export { createOrder } from './orderCreate';
-export { updateOrderStatus, updateOrderPrepTime, partialRejectOrder } from './orderUpdate';
+export { updateOrderStatus, updateOrderPrepTime, partialRejectOrder, updateOrderFulfillment } from './orderUpdate';

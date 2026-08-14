@@ -1,6 +1,6 @@
 import { initTables } from './order/orderInit';
 import { getOrderById, getUserOrders, getAllOrders } from './order/orderRead';
-import { createOrder, updateOrderStatus, updateOrderPrepTime, partialRejectOrder } from './order/orderWrite';
+import { createOrder, updateOrderStatus, updateOrderPrepTime, partialRejectOrder, updateOrderFulfillment } from './order/orderWrite';
 
 export const orderService = {
   initTables,
@@ -9,6 +9,8 @@ export const orderService = {
   updateOrderStatus,
   updateOrderPrepTime,
   partialRejectOrder,
+  updateOrderFulfillment,
   getUserOrders,
   getAllOrders,
 };
+

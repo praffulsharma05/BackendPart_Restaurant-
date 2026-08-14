@@ -134,6 +134,23 @@ export const orderController = {
     }
   },
 
+  async updateFulfillment(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { carNumber, carModel, parkingSpot, tableNumber } = req.body;
+      logger.info('[Order] Updating order fulfillment', { id: req.params.id, carNumber, carModel, parkingSpot, tableNumber });
+      const updatedOrder = await orderService.updateOrderFulfillment(req.params.id, {
+        carNumber,
+        carModel,
+        parkingSpot,
+        tableNumber,
+      });
+      return sendSuccess(res, 'Order fulfillment updated successfully', updatedOrder);
+    } catch (error: any) {
+      logger.error('[Order] Error in updateFulfillment:', error);
+      return sendError(res, error.message || 'Failed to update order fulfillment', 400);
+    }
+  },
+
   /**
    *
    * @param req

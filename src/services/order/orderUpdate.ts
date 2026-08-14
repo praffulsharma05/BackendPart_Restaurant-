@@ -185,3 +185,51 @@ export async function partialRejectOrder(orderId: string, rejectedItemIds: strin
     throw error;
   }
 }
+
+export async function updateOrderFulfillment(
+  orderId: string,
+  details: { carNumber?: string; carModel?: string; parkingSpot?: string; tableNumber?: string }
+) {
+  const [orders] = await dbPool.query<RowDataPacket[]>('SELECT order_type FROM orders WHERE id = ?', [orderId]);
+  if (orders.length === 0) {
+    throw new Error('Order not found');
+  }
+
+  const orderType = orders[0].order_type || 'Car Order';
+
+  if (orderType === 'Car Order') {
+    const [existing] = await dbPool.query<RowDataPacket[]>('SELECT id FROM order_fulfillment_car WHERE order_id = ?', [orderId]);
+    if (existing.length > 0) {
+      await dbPool.query(
+        'UPDATE order_fulfillment_car SET car_number = ?, car_model = ?, parking_spot = ? WHERE order_id = ?',
+        [
+          details.carNumber !== undefined ? details.carNumber : existing[0].car_number,
+          details.carModel !== undefined ? details.carModel : existing[0].car_model,
+          details.parkingSpot !== undefined ? details.parkingSpot : existing[0].parking_spot,
+          orderId,
+        ]
+      );
+    } else {
+      await dbPool.query(
+        'INSERT INTO order_fulfillment_car (order_id, car_number, car_model, parking_spot) VALUES (?, ?, ?, ?)',
+        [orderId, details.carNumber || '', details.carModel || '', details.parkingSpot || '']
+      );
+    }
+  } else if (orderType === 'Dine In') {
+    const [existing] = await dbPool.query<RowDataPacket[]>('SELECT id FROM order_fulfillment_dine_in WHERE order_id = ?', [orderId]);
+    if (existing.length > 0) {
+      await dbPool.query(
+        'UPDATE order_fulfillment_dine_in SET table_number = ? WHERE order_id = ?',
+        [details.tableNumber !== undefined ? details.tableNumber : existing[0].table_number, orderId]
+      );
+    } else {
+      await dbPool.query(
+        'INSERT INTO order_fulfillment_dine_in (order_id, table_number) VALUES (?, ?)',
+        [orderId, details.tableNumber || '']
+      );
+    }
+  }
+
+  return getOrderById(orderId);
+}
+
