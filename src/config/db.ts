@@ -88,6 +88,27 @@ export async function testDbConnection(): Promise<boolean> {
       logger.error('Failed to initialize restaurant_tables table:', tableErr.message || tableErr);
     }
 
+    // Initialize reviews table
+    try {
+      await connection.query(`
+        CREATE TABLE IF NOT EXISTS reviews (
+          id VARCHAR(36) PRIMARY KEY,
+          order_id VARCHAR(100) DEFAULT NULL,
+          user_id VARCHAR(100) DEFAULT NULL,
+          menu_item_id VARCHAR(100) DEFAULT NULL,
+          rating INT NOT NULL,
+          tags TEXT DEFAULT NULL,
+          comment TEXT DEFAULT NULL,
+          status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
+          admin_notes TEXT DEFAULT NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        )
+      `);
+    } catch (reviewErr: any) {
+      logger.error('Failed to initialize reviews table:', reviewErr.message || reviewErr);
+    }
+
     connection.release();
     return true;
   } catch (error) {

@@ -11,6 +11,7 @@ import analyticsRoutes from './analytics.routes';
 import paymentRoutes from './payment.routes';
 import superadminRoutes from './superadmin.routes';
 import cartRoutes from './cart.routes';
+import reviewRoutes from './review.routes';
 
 const router = Router();
 
@@ -35,5 +36,6 @@ router.use('/waiter', waiterRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/analytics', analyticsRoutes);
 router.use('/payment', paymentRoutes);
+router.use('/reviews', reviewRoutes);
 
 export default router;
