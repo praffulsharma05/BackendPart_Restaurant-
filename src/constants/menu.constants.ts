@@ -28,7 +28,7 @@ export const SORT_BY_KEYS = {
 
 export const DEFAULTS = {
   PREP_TIME_MINUTES: 15,
-  RATING: 4.8,
+  RATING: null,
   SPICE_LEVEL: 'medium',
   INVENTORY_STATUS: 'AVAILABLE',
 } as const;

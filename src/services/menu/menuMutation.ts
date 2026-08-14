@@ -20,7 +20,7 @@ export async function createMenuItem(data: any) {
   await dbPool.query(
     `INSERT INTO menu_items (id, category_id, name, description, price, category, image_url, is_vegetarian, is_hidden, inventory_status, prep_time_minutes, rating, spice_level)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, FALSE, ?, ?, ?, ?)`,
-    [id, categoryId, name, description, price, category, imageUrl, isVegetarian ? 1 : 0, DEFAULTS.INVENTORY_STATUS, Number(prepTimeMinutes) || DEFAULTS.PREP_TIME_MINUTES, Number(rating) || DEFAULTS.RATING, spice]
+    [id, categoryId, name, description, price, category, imageUrl, isVegetarian ? 1 : 0, DEFAULTS.INVENTORY_STATUS, Number(prepTimeMinutes) || DEFAULTS.PREP_TIME_MINUTES, rating !== undefined && rating !== null ? Number(rating) : null, spice]
   );
 
   for (const ing of ingredients) {

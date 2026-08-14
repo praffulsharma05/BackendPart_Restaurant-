@@ -55,7 +55,7 @@ export const cartService = {
         price: Number(r.price || 180),
         imageUrl: r.image_url || 'https://images.unsplash.com/photo-1544025162-d76694265947?w=500',
         isVegetarian: Boolean(r.is_vegetarian),
-        rating: Number(r.rating || 4.5),
+        rating: r.rating !== null && r.rating !== undefined ? Number(r.rating) : null,
         category: r.category || 'Main Course',
       },
       quantity: r.quantity,

@@ -9,19 +9,27 @@ import { logger } from '../utils/logger';
 
 export async function createReview(req: Request, res: Response) {
   try {
-    const { orderId, userId, menuItemId, rating, tags, comment } = req.body;
+    const { orderId, userId, menuItemId, rating, foodRating, deliveryRating, tags, comment } = req.body;
 
-    if (!rating || Number(rating) < 1 || Number(rating) > 5) {
-      return res.status(400).json({ success: false, message: 'Rating is required and must be between 1 and 5' });
+    const parsedRating = rating !== undefined && rating !== null && rating !== '' ? Number(rating) : 0;
+    const parsedFoodRating = foodRating !== undefined && foodRating !== null && foodRating !== '' ? Number(foodRating) : 0;
+    const parsedDeliveryRating = deliveryRating !== undefined && deliveryRating !== null && deliveryRating !== '' ? Number(deliveryRating) : 0;
+
+    const overallRating = parsedRating || Math.max(parsedFoodRating, parsedDeliveryRating);
+
+    if (isNaN(overallRating) || overallRating < 1 || overallRating > 5) {
+      return res.status(400).json({ success: false, message: 'Rating is required and must be a valid number between 1 and 5' });
     }
 
     const review = await createReviewService({
-      orderId,
-      userId: userId || (req as any).user?.id || null,
-      menuItemId,
-      rating: Number(rating),
-      tags,
-      comment,
+      orderId: orderId ? String(orderId) : undefined,
+      userId: userId ? String(userId) : (req as any).user?.id || null,
+      menuItemId: menuItemId ? String(menuItemId) : undefined,
+      rating: Math.round(overallRating),
+      foodRating: parsedFoodRating > 0 ? Math.round(parsedFoodRating) : undefined,
+      deliveryRating: parsedDeliveryRating > 0 ? Math.round(parsedDeliveryRating) : undefined,
+      tags: Array.isArray(tags) ? tags : typeof tags === 'string' ? [tags] : [],
+      comment: comment ? String(comment) : '',
     });
 
     return res.status(201).json({

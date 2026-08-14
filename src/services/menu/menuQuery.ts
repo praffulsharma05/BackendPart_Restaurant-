@@ -85,6 +85,22 @@ export async function getMenuItemById(id: string) {
 
   const item: any = mapRowToMenuItem(rows[0]);
 
+  // Dynamically compute live rating and review count from approved reviews (item-level & order-level)
+  try {
+    const [revCalc]: any = await dbPool.query(
+      `SELECT AVG(r.rating) as avg_rating, COUNT(DISTINCT r.id) as review_count
+       FROM reviews r
+       LEFT JOIN order_items oi ON r.order_id = oi.order_id
+       WHERE (r.menu_item_id = ? OR oi.menu_item_id = ?) AND r.status = 'approved'`,
+      [id, id]
+    );
+
+    if (revCalc && revCalc[0] && revCalc[0].avg_rating) {
+      item.rating = Number(Number(revCalc[0].avg_rating).toFixed(1));
+      item.reviewCount = Number(revCalc[0].review_count || 0);
+    }
+  } catch (_revErr) {}
+
   const [ingredients] = await dbPool.query<RowDataPacket[]>(
     'SELECT ingredient_name FROM menu_item_ingredients WHERE menu_item_id = ?',
     [id]

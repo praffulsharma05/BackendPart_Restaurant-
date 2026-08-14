@@ -109,6 +109,21 @@ export async function testDbConnection(): Promise<boolean> {
       logger.error('Failed to initialize reviews table:', reviewErr.message || reviewErr);
     }
 
+    // Synchronize menu_items.rating strictly with approved item-level reviews
+    try {
+      await connection.query(`
+        UPDATE menu_items m
+        LEFT JOIN (
+          SELECT menu_item_id, AVG(rating) as calculated_avg
+          FROM reviews
+          WHERE status = 'approved' AND menu_item_id IS NOT NULL
+          GROUP BY menu_item_id
+        ) r ON m.id = r.menu_item_id
+        SET m.rating = r.calculated_avg
+      `);
+      logger.info('[DB] Synchronized menu_items.rating strictly with approved item-level reviews.');
+    } catch (_syncErr) {}
+
     connection.release();
     return true;
   } catch (error) {
