@@ -128,15 +128,6 @@ export async function createOrder(userId: string, input: CreateOrderInput) {
       (input.preOrderDetails as any)?.specialInstructions ||
       null;
 
-    if (!specialInstructions && Array.isArray(input.items)) {
-      const itemNotes = input.items
-        .map((i: any) => i.customInstructions || i.specialInstructions || i.specialRequest || i.notes)
-        .filter(Boolean);
-      if (itemNotes.length > 0) {
-        specialInstructions = itemNotes.join(', ');
-      }
-    }
-
     await connection.query(
       `INSERT INTO orders 
         (id, user_id, order_type, subtotal, discount, tax, service_charge, reward_points_earned, reward_points_used, total, status, prep_time_minutes, payment_method, payment_status, coupon_code, payment_screenshot_url, order_token, special_instructions)
