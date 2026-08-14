@@ -45,8 +45,19 @@ export async function createReview(req: Request, res: Response) {
 
 export async function getAdminReviews(req: Request, res: Response) {
   try {
-    const { status } = req.query;
-    const reviews = await getAdminReviewsService(status as string | undefined);
+    const { status, menuItemId } = req.query;
+    const { reviews, productRatings } = await getAdminReviewsService(
+      status as string | undefined,
+      menuItemId as string | undefined
+    );
+    
+    if (status === 'approved') {
+      return res.status(200).json({
+        success: true,
+        data: productRatings,
+      });
+    }
+
     return res.status(200).json({
       success: true,
       data: reviews,

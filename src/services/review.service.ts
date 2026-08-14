@@ -85,7 +85,21 @@ export async function createReviewService(data: ReviewData): Promise<ReviewRecor
   }
 }
 
-export async function getAdminReviewsService(statusFilter?: string): Promise<ReviewRecord[]> {
+export interface ProductRatingSummary {
+  menuItemId: string;
+  itemName: string;
+  category?: string;
+  imageUrl?: string;
+  avgRating: number;
+  totalReviews: number;
+}
+
+export interface AdminReviewsResponse {
+  reviews: ReviewRecord[];
+  productRatings: ProductRatingSummary[];
+}
+
+export async function getAdminReviewsService(statusFilter?: string, menuItemId?: string): Promise<AdminReviewsResponse> {
   const connection = await dbPool.getConnection();
   try {
     let sql = `
@@ -107,17 +121,27 @@ export async function getAdminReviewsService(statusFilter?: string): Promise<Rev
       LEFT JOIN menu_items m ON r.menu_item_id = m.id
     `;
     const params: any[] = [];
+    const whereConditions: string[] = [];
 
     if (statusFilter && ['pending', 'approved', 'rejected'].includes(statusFilter)) {
-      sql += ` WHERE r.status = ?`;
+      whereConditions.push(`r.status = ?`);
       params.push(statusFilter);
+    }
+
+    if (menuItemId) {
+      whereConditions.push(`(r.menu_item_id = ? OR r.order_id IN (SELECT order_id FROM order_items WHERE menu_item_id = ?))`);
+      params.push(menuItemId, menuItemId);
+    }
+
+    if (whereConditions.length > 0) {
+      sql += ` WHERE ` + whereConditions.join(' AND ');
     }
 
     sql += ` ORDER BY r.created_at DESC`;
 
     const [rows]: any = await connection.query(sql, params);
 
-    return rows.map((r: any) => {
+    const reviews: ReviewRecord[] = rows.map((r: any) => {
       let displayName = r.item_name;
       if (!displayName && r.order_item_names) {
         displayName = `Order Items (${r.order_item_names})`;
@@ -154,6 +178,45 @@ export async function getAdminReviewsService(statusFilter?: string): Promise<Rev
         itemName: displayName,
       };
     });
+
+    // Compute Product Average Ratings strictly using DB SQL GROUP BY
+    let productSql = `
+      SELECT 
+        COALESCE(r.menu_item_id, oi.menu_item_id) as menuItemId,
+        COALESCE(m.name, 'Unspecified Item') as itemName,
+        m.category as category,
+        m.image_url as imageUrl,
+        ROUND(AVG(r.rating), 1) as avgRating,
+        COUNT(DISTINCT r.id) as totalReviews
+      FROM reviews r
+      LEFT JOIN order_items oi ON r.order_id = oi.order_id
+      LEFT JOIN menu_items m ON COALESCE(r.menu_item_id, oi.menu_item_id) = m.id
+      WHERE r.status = 'approved' AND COALESCE(r.menu_item_id, oi.menu_item_id) IS NOT NULL
+    `;
+    const productParams: any[] = [];
+
+    if (menuItemId) {
+      productSql += ` AND (r.menu_item_id = ? OR oi.menu_item_id = ?)`;
+      productParams.push(menuItemId, menuItemId);
+    }
+
+    productSql += `
+      GROUP BY COALESCE(r.menu_item_id, oi.menu_item_id), m.name, m.category, m.image_url
+      ORDER BY avgRating DESC, totalReviews DESC
+    `;
+
+    const [productRows]: any = await connection.query(productSql, productParams);
+
+    const productRatings: ProductRatingSummary[] = productRows.map((pr: any) => ({
+      menuItemId: String(pr.menuItemId),
+      itemName: pr.itemName,
+      category: pr.category || 'General',
+      imageUrl: pr.imageUrl,
+      avgRating: Number(pr.avgRating),
+      totalReviews: Number(pr.totalReviews),
+    }));
+
+    return { reviews, productRatings };
   } finally {
     connection.release();
   }
@@ -184,23 +247,39 @@ export async function getItemApprovedReviewsService(menuItemId: string) {
       createdAt: r.created_at,
     }));
 
+    // SQL GROUP BY for average rating & total reviews for this particular product
     const [avgRows]: any = await connection.query(
-      `SELECT AVG(r.rating) as avg_rating, COUNT(DISTINCT r.id) as review_count
+      `SELECT 
+         ROUND(AVG(r.rating), 1) as avg_rating, 
+         COUNT(DISTINCT r.id) as review_count
        FROM reviews r
        LEFT JOIN order_items oi ON r.order_id = oi.order_id
        WHERE (r.menu_item_id = ? OR oi.menu_item_id = ?) AND r.status = 'approved'`,
       [menuItemId, menuItemId]
     );
 
-    const avgRating = avgRows[0]?.avg_rating ? Number(Number(avgRows[0].avg_rating).toFixed(1)) : null;
-    const reviewCount = avgRows[0]?.review_count ? Number(avgRows[0].review_count) : 0;
+    // SQL GROUP BY for star rating breakdown for this particular product
+    const [distRows]: any = await connection.query(
+      `SELECT 
+         r.rating as star_rating, 
+         COUNT(DISTINCT r.id) as count
+       FROM reviews r
+       LEFT JOIN order_items oi ON r.order_id = oi.order_id
+       WHERE (r.menu_item_id = ? OR oi.menu_item_id = ?) AND r.status = 'approved'
+       GROUP BY r.rating`,
+      [menuItemId, menuItemId]
+    );
 
-    // Calculate rating breakdown distribution (1 to 5 stars)
     const distribution: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-    reviews.forEach((rev: any) => {
-      const rVal = Math.min(5, Math.max(1, Math.round(Number(rev.rating))));
-      distribution[rVal] = (distribution[rVal] || 0) + 1;
-    });
+    if (Array.isArray(distRows)) {
+      distRows.forEach((d: any) => {
+        const star = Math.min(5, Math.max(1, Math.round(Number(d.star_rating))));
+        distribution[star] = Number(d.count);
+      });
+    }
+
+    const avgRating = avgRows[0]?.avg_rating ? Number(avgRows[0].avg_rating) : null;
+    const reviewCount = avgRows[0]?.review_count ? Number(avgRows[0].review_count) : 0;
 
     return {
       menuItemId,
