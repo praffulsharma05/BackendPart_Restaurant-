@@ -9,13 +9,15 @@ import { logger } from '../utils/logger';
 
 export async function createReview(req: Request, res: Response) {
   try {
-    const { orderId, userId, menuItemId, rating, foodRating, deliveryRating, tags, comment } = req.body;
+    const { orderId, userId, menuItemId, rating, foodRating, deliveryRating, serviceRating, tags, comment } = req.body;
 
     const parsedRating = rating !== undefined && rating !== null && rating !== '' ? Number(rating) : 0;
     const parsedFoodRating = foodRating !== undefined && foodRating !== null && foodRating !== '' ? Number(foodRating) : 0;
-    const parsedDeliveryRating = deliveryRating !== undefined && deliveryRating !== null && deliveryRating !== '' ? Number(deliveryRating) : 0;
+    const parsedServiceRating = serviceRating !== undefined && serviceRating !== null && serviceRating !== ''
+      ? Number(serviceRating)
+      : (deliveryRating !== undefined && deliveryRating !== null && deliveryRating !== '' ? Number(deliveryRating) : 0);
 
-    const overallRating = parsedRating || Math.max(parsedFoodRating, parsedDeliveryRating);
+    const overallRating = parsedRating || Math.max(parsedFoodRating, parsedServiceRating);
 
     if (isNaN(overallRating) || overallRating < 1 || overallRating > 5) {
       return res.status(400).json({ success: false, message: 'Rating is required and must be a valid number between 1 and 5' });
@@ -27,7 +29,8 @@ export async function createReview(req: Request, res: Response) {
       menuItemId: menuItemId ? String(menuItemId) : undefined,
       rating: Math.round(overallRating),
       foodRating: parsedFoodRating > 0 ? Math.round(parsedFoodRating) : undefined,
-      deliveryRating: parsedDeliveryRating > 0 ? Math.round(parsedDeliveryRating) : undefined,
+      deliveryRating: parsedServiceRating > 0 ? Math.round(parsedServiceRating) : undefined,
+      serviceRating: parsedServiceRating > 0 ? Math.round(parsedServiceRating) : undefined,
       tags: Array.isArray(tags) ? tags : typeof tags === 'string' ? [tags] : [],
       comment: comment ? String(comment) : '',
     });

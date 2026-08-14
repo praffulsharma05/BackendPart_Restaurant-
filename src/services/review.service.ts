@@ -8,6 +8,7 @@ export interface ReviewData {
   rating: number;
   foodRating?: number;
   deliveryRating?: number;
+  serviceRating?: number;
   tags?: string[];
   comment?: string;
 }
@@ -20,6 +21,7 @@ export interface ReviewRecord {
   rating: number;
   foodRating?: number;
   deliveryRating?: number;
+  serviceRating?: number;
   tags: string[];
   comment: string | null;
   status: 'pending' | 'approved' | 'rejected';
@@ -35,7 +37,7 @@ export async function createReviewService(data: ReviewData): Promise<ReviewRecor
   const connection = await dbPool.getConnection();
   try {
     const id = `rev_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-    let { orderId = null, userId = null, menuItemId = null, rating, foodRating, deliveryRating, tags = [], comment = '' } = data;
+    let { orderId = null, userId = null, menuItemId = null, rating, foodRating, deliveryRating, serviceRating, tags = [], comment = '' } = data;
 
     // If userId not provided explicitly, attempt resolving from order
     if (!userId && orderId) {
@@ -47,12 +49,13 @@ export async function createReviewService(data: ReviewData): Promise<ReviewRecor
       } catch (_e) {}
     }
 
-    const calculatedRating = rating || Math.max(foodRating || 0, deliveryRating || 0) || 5;
+    const srvRating = serviceRating || deliveryRating || 0;
+    const calculatedRating = rating || Math.max(foodRating || 0, srvRating || 0) || 5;
 
     // Package detailed multi-criteria tags into JSON if provided
     const mergedTags = [...tags];
     if (foodRating) mergedTags.push(`Food:${foodRating}★`);
-    if (deliveryRating) mergedTags.push(`Delivery:${deliveryRating}★`);
+    if (srvRating) mergedTags.push(`Service:${srvRating}★`);
 
     const tagsJson = JSON.stringify(mergedTags);
 
