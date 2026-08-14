@@ -16,6 +16,23 @@ export async function getUserProfile(userId: string) {
 
   let user = users[0];
 
+  // Sync reward_points strictly with transaction history when transactions exist
+  try {
+    const [txns] = await dbPool.query<RowDataPacket[]>('SELECT id FROM reward_transactions WHERE user_id = ? LIMIT 1', [userId]);
+    if (txns.length > 0) {
+      const [txnSumRows] = await dbPool.query<RowDataPacket[]>(
+        `SELECT COALESCE(SUM(CASE WHEN type = 'EARNED' THEN points ELSE -points END), 0) as calcTotal
+         FROM reward_transactions 
+         WHERE user_id = ?`,
+        [userId]
+      );
+      if (txnSumRows.length > 0) {
+        user.reward_points = Math.max(0, Number(txnSumRows[0].calcTotal));
+        await dbPool.query('UPDATE users SET reward_points = ? WHERE id = ?', [user.reward_points, userId]);
+      }
+    }
+  } catch (_e) {}
+
   if (user.role === 'ADMIN' && user.email) {
     const email = user.email.toLowerCase().trim();
     const predefinedAdmin = PREDEFINED_ADMINS[email];

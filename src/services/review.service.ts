@@ -1,5 +1,6 @@
 import { dbPool } from '../config/db';
 import { logger } from '../utils/logger';
+import { rewardService } from './reward.service';
 
 export interface ReviewData {
   orderId?: string;
@@ -8,6 +9,7 @@ export interface ReviewData {
   rating: number;
   foodRating?: number;
   deliveryRating?: number;
+  serviceRating?: number;
   tags?: string[];
   comment?: string;
 }
@@ -20,6 +22,7 @@ export interface ReviewRecord {
   rating: number;
   foodRating?: number;
   deliveryRating?: number;
+  serviceRating?: number;
   tags: string[];
   comment: string | null;
   status: 'pending' | 'approved' | 'rejected';
@@ -35,7 +38,7 @@ export async function createReviewService(data: ReviewData): Promise<ReviewRecor
   const connection = await dbPool.getConnection();
   try {
     const id = `rev_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-    let { orderId = null, userId = null, menuItemId = null, rating, foodRating, deliveryRating, tags = [], comment = '' } = data;
+    let { orderId = null, userId = null, menuItemId = null, rating, foodRating, deliveryRating, serviceRating, tags = [], comment = '' } = data;
 
     // If userId not provided explicitly, attempt resolving from order
     if (!userId && orderId) {
@@ -47,12 +50,13 @@ export async function createReviewService(data: ReviewData): Promise<ReviewRecor
       } catch (_e) {}
     }
 
-    const calculatedRating = rating || Math.max(foodRating || 0, deliveryRating || 0) || 5;
+    const srvRating = serviceRating || deliveryRating || 0;
+    const calculatedRating = rating || Math.max(foodRating || 0, srvRating || 0) || 5;
 
     // Package detailed multi-criteria tags into JSON if provided
     const mergedTags = [...tags];
     if (foodRating) mergedTags.push(`Food:${foodRating}★`);
-    if (deliveryRating) mergedTags.push(`Delivery:${deliveryRating}★`);
+    if (srvRating) mergedTags.push(`Service:${srvRating}★`);
 
     const tagsJson = JSON.stringify(mergedTags);
 
@@ -357,15 +361,19 @@ export async function updateReviewStatusService(
         }
       }
 
-      // 2. Award +10 loyalty reward points to user if user_id present
+      // 2. Award loyalty reward points to user if user_id present and rating points configured > 0
       if (review.user_id) {
         try {
-          await connection.query(`UPDATE users SET reward_points = reward_points + 10 WHERE id = ?`, [review.user_id]);
-          await connection.query(
-            `INSERT INTO reward_transactions (id, user_id, points, type, description)
-             VALUES (?, ?, 10, 'EARNED', 'Bonus reward for submitted review approval')`,
-            [`txn_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`, review.user_id]
-          );
+          const rewardCfg = await rewardService.getRewardSettings();
+          const ratingPoints = Number(rewardCfg.ratingRewardPoints || 0);
+          if (ratingPoints > 0) {
+            await connection.query(`UPDATE users SET reward_points = reward_points + ? WHERE id = ?`, [ratingPoints, review.user_id]);
+            await connection.query(
+              `INSERT INTO reward_transactions (id, user_id, points, type, description)
+               VALUES (?, ?, ?, 'EARNED', 'Bonus reward for submitted review approval')`,
+              [`txn_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`, review.user_id, ratingPoints]
+            );
+          }
         } catch (e: any) {
           logger.warn(`Could not award review bonus points: ${e.message}`);
         }
