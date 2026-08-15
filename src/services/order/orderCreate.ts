@@ -35,7 +35,7 @@ export async function createOrder(userId: string, input: CreateOrderInput) {
     let rewardPointsEarned = 0;
     try {
       const settings = await rewardService.getRewardSettings();
-      if (settings && settings.isActive && settings.rewardPercentage > 0) {
+      if (settings && settings.isActive && settings.isOrderRewardActive !== false && settings.rewardPercentage > 0) {
         const rawPoints = Math.floor((total * settings.rewardPercentage) / 100);
         rewardPointsEarned = settings.maxPointsPerOrder > 0
           ? Math.min(rawPoints, settings.maxPointsPerOrder)

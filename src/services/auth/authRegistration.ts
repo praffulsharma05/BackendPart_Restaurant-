@@ -157,10 +157,35 @@ export async function register(phoneInput: string, emailInput: string, nameInput
   }
 
   const userId = `u_${Date.now()}`;
+  let initialPoints = 0;
+
+  try {
+    const { rewardService } = await import('../reward.service');
+    await rewardService.initTables();
+    const rewardCfg = await rewardService.getRewardSettings();
+    if (rewardCfg.isWelcomeRewardActive && rewardCfg.welcomeRewardPoints > 0) {
+      initialPoints = Number(rewardCfg.welcomeRewardPoints);
+    }
+  } catch (err: any) {
+    console.error('[AuthRegistration] Error fetching reward settings:', err);
+  }
+
   await dbPool.query(
     'INSERT INTO users (id, phone, name, email, role, reward_points, gold_member) VALUES (?, ?, ?, ?, ?, ?, ?)',
-    [userId, phone, name, email || null, 'CUSTOMER', 0, false]
+    [userId, phone, name, email || null, 'CUSTOMER', initialPoints, false]
   );
+
+  if (initialPoints > 0) {
+    try {
+      await dbPool.query(
+        `INSERT INTO reward_transactions (id, user_id, points, type, description)
+         VALUES (?, ?, ?, 'EARNED', 'Welcome bonus reward points for creating account')`,
+        [`txn_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`, userId, initialPoints]
+      );
+    } catch (txnErr: any) {
+      console.error('[AuthRegistration] Error inserting welcome reward transaction:', txnErr);
+    }
+  }
 
   const payload = { id: userId, phone, role: 'CUSTOMER' as UserRole, name };
   const accessToken = generateAccessToken(payload);
@@ -198,7 +223,7 @@ export async function register(phoneInput: string, emailInput: string, nameInput
       name,
       email: email || null,
       role: 'CUSTOMER',
-      rewardPoints: 0,
+      rewardPoints: initialPoints,
       goldMember: false,
     },
     accessToken,

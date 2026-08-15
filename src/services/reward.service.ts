@@ -27,12 +27,31 @@ export const rewardService = {
         point_expiry_days INT NOT NULL DEFAULT 0,
         redemption_ratio DECIMAL(5,2) NOT NULL DEFAULT 0.00,
         rating_reward_points INT NOT NULL DEFAULT 10,
+        is_order_reward_active BOOLEAN NOT NULL DEFAULT TRUE,
+        is_review_reward_active BOOLEAN NOT NULL DEFAULT TRUE,
+        is_welcome_reward_active BOOLEAN NOT NULL DEFAULT FALSE,
+        welcome_reward_points INT NOT NULL DEFAULT 50,
         is_active BOOLEAN NOT NULL DEFAULT FALSE,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     `);
     try {
       await dbPool.query(`ALTER TABLE reward_settings ADD COLUMN rating_reward_points INT NOT NULL DEFAULT 10`);
+    } catch (_e) {}
+    try {
+      await dbPool.query(`ALTER TABLE reward_settings ADD COLUMN is_order_reward_active BOOLEAN NOT NULL DEFAULT TRUE`);
+    } catch (_e) {}
+    try {
+      await dbPool.query(`ALTER TABLE reward_settings ADD COLUMN is_review_reward_active BOOLEAN NOT NULL DEFAULT TRUE`);
+    } catch (_e) {}
+    try {
+      await dbPool.query(`ALTER TABLE reward_settings ADD COLUMN is_welcome_reward_active BOOLEAN NOT NULL DEFAULT FALSE`);
+    } catch (_e) {}
+    try {
+      await dbPool.query(`ALTER TABLE reward_settings ADD COLUMN welcome_reward_points INT NOT NULL DEFAULT 50`);
+    } catch (_e) {}
+    try {
+      await dbPool.query(`ALTER TABLE reward_transactions ADD COLUMN description VARCHAR(255) NULL`);
     } catch (_e) {}
   },
 
@@ -52,12 +71,16 @@ export const rewardService = {
           pointExpiryDays: Number(r.point_expiry_days || 0),
           redemptionRatio: Number(r.redemption_ratio || 0),
           ratingRewardPoints: Number(r.rating_reward_points ?? 10),
+          isOrderRewardActive: r.is_order_reward_active !== undefined ? Boolean(r.is_order_reward_active) : true,
+          isReviewRewardActive: r.is_review_reward_active !== undefined ? Boolean(r.is_review_reward_active) : true,
+          isWelcomeRewardActive: r.is_welcome_reward_active !== undefined ? Boolean(r.is_welcome_reward_active) : false,
+          welcomeRewardPoints: Number(r.welcome_reward_points ?? 50),
           isActive: Boolean(r.is_active),
         };
       } else {
         await dbPool.query(`
-          INSERT INTO reward_settings (id, reward_percentage, max_points_per_order, monthly_point_limit, point_expiry_days, redemption_ratio, rating_reward_points, is_active)
-          VALUES (1, 0.00, 0, 0, 0, 0.00, 10, FALSE)
+          INSERT INTO reward_settings (id, reward_percentage, max_points_per_order, monthly_point_limit, point_expiry_days, redemption_ratio, rating_reward_points, is_order_reward_active, is_review_reward_active, is_welcome_reward_active, welcome_reward_points, is_active)
+          VALUES (1, 0.00, 0, 0, 0, 0.00, 10, TRUE, TRUE, FALSE, 50, FALSE)
         `);
         return {
           rewardPercentage: 0,
@@ -66,6 +89,10 @@ export const rewardService = {
           pointExpiryDays: 0,
           redemptionRatio: 0,
           ratingRewardPoints: 10,
+          isOrderRewardActive: true,
+          isReviewRewardActive: true,
+          isWelcomeRewardActive: false,
+          welcomeRewardPoints: 50,
           isActive: false,
         };
       }
@@ -77,6 +104,10 @@ export const rewardService = {
         pointExpiryDays: 0,
         redemptionRatio: 0,
         ratingRewardPoints: 10,
+        isOrderRewardActive: true,
+        isReviewRewardActive: true,
+        isWelcomeRewardActive: false,
+        welcomeRewardPoints: 50,
         isActive: false,
       };
     }
@@ -93,15 +124,19 @@ export const rewardService = {
     const pointExpiryDays = data.pointExpiryDays !== undefined ? Number(data.pointExpiryDays) : 0;
     const redemptionRatio = data.redemptionRatio !== undefined ? Number(data.redemptionRatio) : 0;
     const ratingRewardPoints = data.ratingRewardPoints !== undefined ? Number(data.ratingRewardPoints) : 10;
+    const isOrderRewardActive = data.isOrderRewardActive !== undefined ? Boolean(data.isOrderRewardActive) : true;
+    const isReviewRewardActive = data.isReviewRewardActive !== undefined ? Boolean(data.isReviewRewardActive) : true;
+    const isWelcomeRewardActive = data.isWelcomeRewardActive !== undefined ? Boolean(data.isWelcomeRewardActive) : false;
+    const welcomeRewardPoints = data.welcomeRewardPoints !== undefined ? Number(data.welcomeRewardPoints) : 50;
     const isActive = data.isActive !== undefined ? Boolean(data.isActive) : false;
 
     try {
       const [rows] = await dbPool.query<RowDataPacket[]>('SELECT id FROM reward_settings WHERE id = 1');
       if (rows.length === 0) {
         await dbPool.query(
-          `INSERT INTO reward_settings (id, reward_percentage, max_points_per_order, monthly_point_limit, point_expiry_days, redemption_ratio, rating_reward_points, is_active)
-           VALUES (1, ?, ?, ?, ?, ?, ?, ?)`,
-          [rewardPercentage, maxPointsPerOrder, monthlyPointLimit, pointExpiryDays, redemptionRatio, ratingRewardPoints, isActive]
+          `INSERT INTO reward_settings (id, reward_percentage, max_points_per_order, monthly_point_limit, point_expiry_days, redemption_ratio, rating_reward_points, is_order_reward_active, is_review_reward_active, is_welcome_reward_active, welcome_reward_points, is_active)
+           VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [rewardPercentage, maxPointsPerOrder, monthlyPointLimit, pointExpiryDays, redemptionRatio, ratingRewardPoints, isOrderRewardActive, isReviewRewardActive, isWelcomeRewardActive, welcomeRewardPoints, isActive]
         );
       } else {
         await dbPool.query(
@@ -112,9 +147,13 @@ export const rewardService = {
             point_expiry_days = ?,
             redemption_ratio = ?,
             rating_reward_points = ?,
+            is_order_reward_active = ?,
+            is_review_reward_active = ?,
+            is_welcome_reward_active = ?,
+            welcome_reward_points = ?,
             is_active = ?
            WHERE id = 1`,
-          [rewardPercentage, maxPointsPerOrder, monthlyPointLimit, pointExpiryDays, redemptionRatio, ratingRewardPoints, isActive]
+          [rewardPercentage, maxPointsPerOrder, monthlyPointLimit, pointExpiryDays, redemptionRatio, ratingRewardPoints, isOrderRewardActive, isReviewRewardActive, isWelcomeRewardActive, welcomeRewardPoints, isActive]
         );
       }
     } catch (err) {

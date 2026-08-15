@@ -365,7 +365,8 @@ export async function updateReviewStatusService(
       if (review.user_id) {
         try {
           const rewardCfg = await rewardService.getRewardSettings();
-          const ratingPoints = Number(rewardCfg.ratingRewardPoints || 0);
+          const isEnabled = Boolean(rewardCfg.isActive) && Boolean(rewardCfg.isReviewRewardActive !== false);
+          const ratingPoints = isEnabled ? Number(rewardCfg.ratingRewardPoints || 0) : 0;
           if (ratingPoints > 0) {
             await connection.query(`UPDATE users SET reward_points = reward_points + ? WHERE id = ?`, [ratingPoints, review.user_id]);
             await connection.query(
