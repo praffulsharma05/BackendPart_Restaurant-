@@ -13,6 +13,8 @@ import {
   register,
 } from './auth/authRegistration';
 
+import { resetPassword } from './auth/authResetPassword';
+
 export const authService = {
   adminLogin,
   loginWithPhone,
@@ -24,4 +26,5 @@ export const authService = {
   updateProfile,
   deleteCustomer,
   register,
+  resetPassword,
 };

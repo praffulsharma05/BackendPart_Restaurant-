@@ -25,6 +25,11 @@ export async function loginWithEmail(emailInput: string, password: string) {
     if (!isPasswordValid) {
       throw new Error(AUTH_STRINGS.ERRORS.INVALID_CREDENTIALS);
     }
+  } else if (user.password_hash) {
+    const isPasswordValid = await bcrypt.compare(password, user.password_hash);
+    if (!isPasswordValid) {
+      throw new Error(AUTH_STRINGS.ERRORS.INVALID_CREDENTIALS);
+    }
   }
 
   const { accessToken, refreshToken } = await createAndSaveTokens(user);

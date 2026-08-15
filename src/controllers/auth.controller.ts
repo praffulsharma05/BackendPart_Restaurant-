@@ -216,5 +216,27 @@ export const authController = {
       next(error);
     }
   },
+
+  async resetPassword(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { identifier, newPassword, confirmPassword } = req.body;
+      logger.info('[Auth] Password reset attempt', { identifier });
+
+      if (!identifier || !newPassword) {
+        return sendError(res, 'Identifier (mobile or email) and new password are required', 400);
+      }
+
+      if (confirmPassword !== undefined && newPassword !== confirmPassword) {
+        return sendError(res, 'New password and confirm password do not match', 400);
+      }
+
+      const result = await authService.resetPassword(identifier, newPassword);
+      logger.info('[Auth] Password reset successful', { identifier });
+      return sendSuccess(res, result.message, result);
+    } catch (error: any) {
+      logger.error('[Auth] Error in resetPassword:', error);
+      return sendError(res, error.message || 'Password reset failed', 400);
+    }
+  },
 };
 
