@@ -1,123 +1,74 @@
-# 🚀 Scalable Restaurant Ordering System - Express REST API & Real-time Server
+# ⚙️ Royal Spice — Express RESTful API Engine
 
-Production-grade, scalable REST API server built with **Node.js, Express.js, TypeScript, MySQL, JWT Authentication, Firebase Admin SDK, Socket.IO, and Cloudinary**.
-
----
-
-## 🏗️ Tech Stack & Key Features
-
-- **Runtime & Language**: Node.js, Express.js, TypeScript
-- **Database**: MySQL 8.0+ (`mysql2/promise` with connection pooling)
-- **Authentication**: Firebase OTP Phone verification + Custom JWT Access & Refresh Tokens
-- **Real-Time Engine**: Socket.IO for live order tracking, kitchen status pushes, and waiter calls
-- **Image Storage**: Cloudinary integration via Multer memory streaming
-- **Validation**: Zod schema validation & centralized error middleware
+Welcome to the **Royal Spice Backend RESTful API Engine**, a robust, high-performance backend application built with **Node.js**, **Express.js**, and **TypeScript**.
 
 ---
 
-## 📂 Project Architecture
+## 🎯 Application Purpose & Overview
+The Backend REST API serves as the central data engine powering both the Customer Frontend application and the Admin Operations Portal. It manages authentication, menu persistence, real-time multi-fulfillment order processing, automated preparation timers, review moderation, reward points calculations, and analytics reporting.
 
+---
+
+## 🚀 Key API Controllers & Services
+1. **Authentication API (`auth.controller.ts`)**: Phone OTP generation/verification, JWT bearer token signing, customer profile management, and admin authentication.
+2. **Menu Management API (`menu.controller.ts`)**: Public menu fetching, category filtering, dish creation/editing, and instant stock availability toggling.
+3. **Orders & Fulfillment API (`order.controller.ts`)**: Creation of multi-fulfillment orders (Pickup, Car Service, Dine-In, Pre-Order), prep timer assignment, status transitions (`pending` ➔ `preparing` ➔ `ready` ➔ `delivered`), and polling sync.
+4. **Customizations API (`customization.controller.ts`)**: Management of dish add-on groups, size options, and extra toppings.
+5. **Reviews & Ratings API (`review.controller.ts`)**: Customer review submission, pending review query, admin approve/reject actions, and automated +10 loyalty point bonus transactions.
+6. **Reward Points API (`reward.controller.ts`)**: Customer reward point balance queries, earned/redeemed transaction history logs, and admin manual adjustments.
+7. **Cart API (`cart.controller.ts`)**: Server-side cart persistence and state sync.
+8. **Offers & Promotions API (`offer.controller.ts`)**: Promo code validation (`ROYAL50`), expiration checks, minimum order amount verification, and discount calculations.
+9. **Payment API (`payment.controller.ts`)**: Payment intent creation for online gateways and status verification.
+10. **Waiter & Call Attendant API (`waiter.controller.ts`)**: Real-time dining table request creation ("Need Water", "Bill") and resolution status updates.
+11. **Analytics API (`analytics.controller.ts`)**: Sales revenue aggregation, order volume statistics, and top-selling dish metrics over custom timeframes.
+12. **SuperAdmin API (`superadmin.controller.ts`)**: Global system status checking, database connection monitoring, and error/access log streaming.
+
+---
+
+## 📂 Architecture & Directory Structure
 ```
-d:\Restaurant\Backend\
-├── schema.sql              # Enterprise MySQL schema (19 tables)
-├── seed.sql                # Complete sample dataset (dishes, offers, orders)
-├── .env                    # Environment variables configuration
-├── package.json
-├── tsconfig.json
-└── src/
-    ├── config/             # DB, Firebase Admin & Cloudinary setup
-    ├── types/              # TypeScript domain types & Express definitions
-    ├── middlewares/        # JWT Auth, Upload, Error handler & Validation
-    ├── utils/              # JWT helpers, Logger, API response & Pagination
-    ├── services/           # Business logic (Auth, Menu, Order, Offers, Rewards, Waiter, Analytics)
-    ├── controllers/        # HTTP Request handlers
-    ├── routes/             # REST API Routes
-    ├── websocket/          # Socket.IO event listeners & rooms
-    └── server.ts           # HTTP Express Server + Socket.IO bootstrap
+d:\Restaurant\Backend/
+├── src/
+│   ├── config/                   # Environment variables & database connection configuration
+│   ├── constants/                # Error strings, HTTP status constants, system defaults
+│   ├── controllers/              # Express route controllers (auth, order, menu, review, etc.)
+│   ├── middlewares/              # JWT auth verification, error handling, request logging
+│   ├── routes/                   # API endpoint route declarations (/api/orders, /api/menu, etc.)
+│   ├── services/                 # Core business logic layer & database queries
+│   ├── types/                    # TypeScript interfaces & DTO type definitions
+│   └── utils/                    # Password hashing (bcrypt), JWT utilities, validation helpers
+├── MODULE_TEST_CASES_AND_USE_CASES.md  # Detailed API test cases & use cases for all 12 controllers
+├── schema.sql                    # Database table schemas
+├── seed.sql                      # Initial seed dataset
+└── package.json
 ```
 
 ---
 
-## 🗄️ MySQL Database Setup (MySQL Workbench)
-
-1. Open **MySQL Workbench** and connect to your connection `Restaurant` (`127.0.0.1:3306`).
-2. Run [`schema.sql`](file:///d:/Restaurant/Backend/schema.sql) to create the `Restaurant` database schema and all 19 tables.
-3. Run [`seed.sql`](file:///d:/Restaurant/Backend/seed.sql) to populate initial categories, items (including *Paneer Tikka Royale* marked as `SOLD_OUT`), offers, orders, and rewards.
+## 🛠️ Tech Stack & Dependencies
+- **Runtime Environment**: Node.js
+- **Framework**: Express.js
+- **Language**: TypeScript (Strict Mode)
+- **Security**: JSON Web Tokens (JWT), Bcrypt, Express Rate Limit, Helmet CORS policy
 
 ---
 
-## ⚡ Running the Backend Server
+## ⚡ Getting Started & Commands
 
 ```bash
-cd d:\Restaurant\Backend
+# 1. Install dependencies
+npm install
 
-# Development Mode (Hot Reloading via Nodemon + ts-node)
+# 2. Start local development server with hot-reload (Port 5000)
 npm run dev
 
-# Build TypeScript to JavaScript dist/
+# 3. Perform type checking & compile TypeScript to JS
 npm run build
-
-# Production Mode
-npm start
 ```
 
-Base API URL: `http://localhost:5000/api`  
-Health Check: `http://localhost:5000/health`
-
 ---
 
-## 📡 Socket.IO Real-Time Events
-
-- **Rooms**:
-  - `kitchen`: Receives instant alerts on new orders and waiter calls (`order:created`, `waiter:call`).
-  - `order_{orderId}`: Receives live order status updates (`order:status_updated`, `order:prep_time_updated`).
-
----
-
-## 🔌 REST API Endpoints Overview
-
-### 1. Authentication (`/api/auth`)
-- `POST /api/auth/verify-firebase-token` — OTP verification & token generation
-- `GET /api/auth/profile` — Fetch current user profile & saved vehicles
-
-### 2. Restaurant Module (`/api/restaurant`)
-- `GET /api/restaurant` — Public details, operational timings & UPI QR details
-- `PUT /api/restaurant` — [Admin] Update restaurant info & QR details
-
-### 3. Menu & Inventory Module (`/api/menu`)
-- `GET /api/menu/categories` — List menu categories
-- `GET /api/menu` — List menu items with search & category filters
-- `GET /api/menu/:id` — Get dish details & add-on options
-- `POST /api/menu/upload-image` — [Admin] Upload image to Cloudinary
-- `POST /api/menu` — [Admin] Create menu item
-- `PUT /api/menu/:id` — [Admin] Update menu item
-- `PATCH /api/menu/:id/inventory-status` — [Admin/Kitchen] Update inventory status (`AVAILABLE` vs `SOLD_OUT`)
-- `PATCH /api/menu/:id/hide` — [Admin] Hide / show menu item
-- `DELETE /api/menu/:id` — [Admin] Delete menu item
-
-### 4. Orders Module (`/api/orders`)
-- `POST /api/orders` — Place order (`Dine In`, `Car Order`, `Take Away`, `Pre Order`)
-- `GET /api/orders/my-orders` — Get customer order history
-- `GET /api/orders/all` — [Kitchen/Admin] List all orders
-- `GET /api/orders/:id` — Get single order details
-- `PATCH /api/orders/:id/status` — Update order status (`Pending` ➔ `Accepted` ➔ `Preparing` ➔ `Ready` ➔ `Served` ➔ `Completed` / `Cancelled`)
-- `PATCH /api/orders/:id/prep-time` — Assign prep time (10, 15, 20, 30, 45 mins)
-
-### 5. Offers & Coupons (`/api/offers`)
-- `GET /api/offers` — Get active promotions & discounts
-- `POST /api/offers/validate` — Validate coupon code (Percentage, Flat, First Order, Cashback)
-- `POST /api/offers` — [Admin] Create new coupon
-
-### 6. Reward Points (`/api/rewards`)
-- `GET /api/rewards/summary` — User reward points, monthly limit & 6-month expiry history
-
-### 7. Waiter Call (`/api/waiter`)
-- `POST /api/waiter/call` — Request waiter assistance to a table
-- `GET /api/waiter/pending` — [Staff] View pending waiter calls
-- `PATCH /api/waiter/:id/attend` — [Staff] Mark call as attended
-
-### 8. Analytics & Owner Dashboard (`/api/analytics`)
-- `GET /api/analytics/summary` — Daily & monthly revenue, total customers, cancelled order metrics
-- `GET /api/analytics/top-dishes` — Most ordered dishes ranking
-- `GET /api/analytics/peak-hours` — Order volume grouped by hour of the day
-- `GET /api/analytics/cancelled-orders` — Cancelled orders log & reasons
+## 📄 Related Documentation
+- 📘 [`MODULE_TEST_CASES_AND_USE_CASES.md`](file:///d:/Restaurant/Backend/MODULE_TEST_CASES_AND_USE_CASES.md) — Comprehensive API test matrix with endpoints, payloads, HTTP status codes, and expected JSON responses for all 12 controllers.
+- 📙 [`CODE_REVIEW_AND_MISTAKES.md`](file:///d:/Restaurant/Backend/CODE_REVIEW_AND_MISTAKES.md) — Controller error handling logs, async promise rejection prevention, and SQL parameterization guidelines.
+- 📖 [`d:\Restaurant\README.md`](file:///d:/Restaurant/README.md) — Root system architecture document.
