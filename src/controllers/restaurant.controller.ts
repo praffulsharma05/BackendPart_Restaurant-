@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { restaurantService } from '../services/restaurant.service';
+import { saveLocalFile } from '../utils/localStorage';
 import { sendSuccess } from '../utils/apiResponse';
 import { logger } from '../utils/logger';
 import { dbPool } from '../config/db';
@@ -54,20 +55,7 @@ export const restaurantController = {
         return res.status(400).json({ success: false, message: 'No logo file uploaded' });
       }
 
-      const mime = req.file.mimetype || 'image/png';
-      const base64 = req.file.buffer.toString('base64');
-      let imageUrl = `data:${mime};base64,${base64}`;
-
-      // Try uploading to Cloudinary if available
-      try {
-        const { uploadToCloudinary } = await import('../config/cloudinary');
-        const cloudUrl = await uploadToCloudinary(req.file.buffer, 'restaurant_logos');
-        if (cloudUrl && !cloudUrl.includes('unsplash')) {
-          imageUrl = cloudUrl;
-        }
-      } catch (err) {
-        logger.warn('[Restaurant] Cloudinary logo upload failed, falling back to base64');
-      }
+      const imageUrl = saveLocalFile(req.file.buffer, req.file.originalname, 'restaurant_logos');
 
       // Automatically update MySQL database with uploaded logoUrl
       await restaurantService.updateRestaurantInfo({ logoUrl: imageUrl });

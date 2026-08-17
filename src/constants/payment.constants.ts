@@ -6,5 +6,5 @@ export const PAYMENT_STRINGS = {
   MESSAGES: {
     UPLOAD_SUCCESS: 'Receipt screenshot uploaded successfully',
   },
-  CLOUDINARY_FOLDER: 'payment_screenshots',
+  UPLOAD_FOLDER: 'payment_screenshots',
 } as const;

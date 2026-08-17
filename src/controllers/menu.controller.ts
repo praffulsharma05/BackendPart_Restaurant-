@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { menuService } from '../services/menu.service';
-import { uploadToCloudinary } from '../config/cloudinary';
+import { saveLocalFile } from '../utils/localStorage';
 import { sendSuccess, sendError } from '../utils/apiResponse';
 import { customizationController } from './customization.controller';
 import { logger } from '../utils/logger';
@@ -159,20 +159,7 @@ export const menuController = {
         return sendError(res, 'No image file uploaded', 400);
       }
 
-      const mime = req.file.mimetype || 'image/png';
-      const base64 = req.file.buffer.toString('base64');
-      let imageUrl = `data:${mime};base64,${base64}`;
-
-      try {
-        const cloudUrl = await uploadToCloudinary(req.file.buffer, 'restaurant_menu');
-        if (cloudUrl && !cloudUrl.includes('unsplash')) {
-          imageUrl = cloudUrl;
-        }
-      } catch (err) {
-        // Fallback
-        logger.warn('[Menu] Cloudinary image upload failed, falling back to base64');
-      }
-
+      const imageUrl = saveLocalFile(req.file.buffer, req.file.originalname, 'restaurant_menu');
       return sendSuccess(res, 'Image uploaded successfully', { imageUrl });
     } catch (error) {
       logger.error('[Menu] Error in uploadImage:', error);

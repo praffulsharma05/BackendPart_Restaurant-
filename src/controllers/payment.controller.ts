@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { restaurantService } from '../services/restaurant.service';
-import { uploadToCloudinary } from '../config/cloudinary';
+import { saveLocalFile } from '../utils/localStorage';
 import { sendSuccess, sendError } from '../utils/apiResponse';
 import { PAYMENT_STRINGS } from '../constants/payment.constants';
 
@@ -37,8 +37,8 @@ export const paymentController = {
       if (!file) {
         return sendError(res, PAYMENT_STRINGS.ERRORS.NO_FILE, 400);
       }
-      const cloudUrl = await uploadToCloudinary(file.buffer, PAYMENT_STRINGS.CLOUDINARY_FOLDER);
-      return sendSuccess(res, PAYMENT_STRINGS.MESSAGES.UPLOAD_SUCCESS, { url: cloudUrl });
+      const url = saveLocalFile(file.buffer, file.originalname, 'payment_screenshots');
+      return sendSuccess(res, PAYMENT_STRINGS.MESSAGES.UPLOAD_SUCCESS, { url });
     } catch (error: any) {
       console.error('Receipt Upload Error:', error);
       return sendError(res, error.message || PAYMENT_STRINGS.ERRORS.UPLOAD_FAILED, 500);

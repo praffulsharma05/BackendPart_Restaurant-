@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { authService } from '../services/auth.service';
-import { uploadToCloudinary } from '../config/cloudinary';
+import { saveLocalFile } from '../utils/localStorage';
 import { sendSuccess, sendError } from '../utils/apiResponse';
 import { logger } from '../utils/logger';
 
@@ -182,19 +182,7 @@ export const authController = {
         return sendError(res, 'No avatar file uploaded', 400);
       }
 
-      const mime = req.file.mimetype || 'image/png';
-      const base64 = req.file.buffer.toString('base64');
-      let avatarUrl = `data:${mime};base64,${base64}`;
-
-      try {
-        const cloudUrl = await uploadToCloudinary(req.file.buffer, 'user_avatars');
-        if (cloudUrl && !cloudUrl.includes('unsplash')) {
-          avatarUrl = cloudUrl;
-        }
-      } catch (err) {
-        logger.warn('[Auth] Cloudinary upload failed, falling back to base64');
-      }
-
+      const avatarUrl = saveLocalFile(req.file.buffer, req.file.originalname, 'user_avatars');
       return sendSuccess(res, 'Avatar uploaded successfully', { avatarUrl });
     } catch (error) {
       logger.error('[Auth] Error in uploadAvatar:', error);

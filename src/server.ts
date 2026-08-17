@@ -22,7 +22,6 @@ logger.info(
   Object.keys(process.env).filter(
     (k) =>
       k.startsWith('DB_') ||
-      k.startsWith('CLOUDINARY_') ||
       k.startsWith('ADMIN_') ||
       k.startsWith('JWT_') ||
       k === 'PORT' ||
@@ -36,8 +35,9 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(requestLogger);
 
-// Serve static images
+// Serve static images & uploads
 app.use('/images', express.static(path.join(process.cwd(), 'public/images')));
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 
 
@@ -77,7 +77,7 @@ const PORT = passengerPort || Number(process.env.PORT) || 5000;
 const isProd = process.env.NODE_ENV?.toLowerCase() === 'production';
 const baseUrl =
   process.env.BASE_URL ||
-  (isProd ? 'https://restaurant.landmaarkdeveloper.com' : `http://localhost:${PORT}`);
+  (isProd ? 'https://mow.landmaarkdeveloper.com' : `http://localhost:${PORT}`);
 
 function bootstrap() {
   const httpServer = app.listen(PORT, () => {
