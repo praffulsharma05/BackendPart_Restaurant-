@@ -79,7 +79,7 @@ const PORT = passengerPort || Number(process.env.PORT) || 5000;
 const isProd = process.env.NODE_ENV?.toLowerCase() === 'production';
 const baseUrl =
   process.env.BASE_URL ||
-  (isProd ? 'https://mow.landmaarkdeveloper.com' : `http://localhost:${PORT}`);
+  (isProd ? 'https://mealsonwheels.landmaarkdeveloper.com' : `http://localhost:${PORT}`);
 
 function bootstrap() {
   const httpServer = app.listen(PORT, () => {
