@@ -27,7 +27,7 @@ export function saveLocalFile(fileBuffer: Buffer, originalName: string, folder: 
 
     const isProd = process.env.NODE_ENV?.toLowerCase() === 'production';
     const port = process.env.PORT || 5000;
-    const baseUrl = process.env.BASE_URL || (isProd ? 'https://mealsonwheels.landmaarkdeveloper.com' : `http://localhost:${port}`);
+    const baseUrl = process.env.BASE_URL || 'https://mealsonwheels.landmaarkdeveloper.com';
     const cleanBaseUrl = baseUrl.endsWith('/api') ? baseUrl : `${baseUrl}/api`;
 
     return `${cleanBaseUrl}/uploads/${folder}/${fileName}`;
