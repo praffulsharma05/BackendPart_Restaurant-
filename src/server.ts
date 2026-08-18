@@ -37,7 +37,9 @@ app.use(requestLogger);
 
 // Serve static images & uploads
 app.use('/images', express.static(path.join(process.cwd(), 'public/images')));
+app.use('/api/images', express.static(path.join(process.cwd(), 'public/images')));
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+app.use('/api/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 
 
