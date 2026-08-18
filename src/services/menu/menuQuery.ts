@@ -4,6 +4,7 @@ import { InventoryStatus } from '../../types';
 import { applyBackendMenuFilters } from './menuFilter';
 import { getCategories, ensureCategoriesInDb } from './menuCategories';
 import { DEFAULTS, SQL_QUERIES } from '../../constants';
+import { normalizeImageUrl } from '../../utils/imageUrl';
 
 export { getCategories, ensureCategoriesInDb };
 
@@ -153,7 +154,7 @@ function mapRowToMenuItem(r: RowDataPacket) {
     rating: r.rating !== null && r.rating !== undefined ? Number(r.rating) : null,
     spiceLevel: r.spice_level || DEFAULTS.SPICE_LEVEL,
     category: r.category,
-    imageUrl: r.image_url,
+    imageUrl: normalizeImageUrl(r.image_url),
     isVegetarian: Boolean(r.is_vegetarian),
     isHidden: Boolean(r.is_hidden),
     inventoryStatus: r.inventory_status as InventoryStatus,

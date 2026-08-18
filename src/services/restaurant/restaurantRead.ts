@@ -1,5 +1,6 @@
 import { dbPool } from '../../config/db';
 import { RowDataPacket } from 'mysql2';
+import { normalizeImageUrl } from '../../utils/imageUrl';
 
 export async function getRestaurantDetails() {
   let info: any = null;
@@ -47,7 +48,7 @@ export async function getRestaurantDetails() {
       id: info.id || '1',
       name: info.name || '',
       tagline: info.tagline || '',
-      logoUrl: info.logo_url || '',
+      logoUrl: normalizeImageUrl(info.logo_url || ''),
       phone: info.phone || '',
       email: info.email || '',
       address: info.address || '',
@@ -55,7 +56,7 @@ export async function getRestaurantDetails() {
       serviceChargePercentage: Number(info.service_charge_percentage || 2.5),
       qrDetails: {
         upiId: info.upi_id || '',
-        qrCodeImageUrl: info.qr_payment_image_url || '',
+        qrCodeImageUrl: normalizeImageUrl(info.qr_payment_image_url || ''),
       },
     },
     timings: timingsRows.map((t) => ({
@@ -76,14 +77,14 @@ export async function getAllRestaurants() {
       id: r.id,
       name: r.name,
       tagline: r.tagline,
-      logoUrl: r.logo_url,
+      logoUrl: normalizeImageUrl(r.logo_url),
       phone: r.phone,
       email: r.email,
       address: r.address,
       taxPercentage: 0,
       serviceChargePercentage: Number(r.service_charge_percentage || 2.5),
       upiId: r.upi_id,
-      qrPaymentImageUrl: r.qr_payment_image_url,
+      qrPaymentImageUrl: normalizeImageUrl(r.qr_payment_image_url),
       isActive: Boolean(r.is_active),
       createdAt: r.created_at,
     }));

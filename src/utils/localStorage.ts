@@ -28,8 +28,9 @@ export function saveLocalFile(fileBuffer: Buffer, originalName: string, folder: 
     const isProd = process.env.NODE_ENV?.toLowerCase() === 'production';
     const port = process.env.PORT || 5000;
     const baseUrl = process.env.BASE_URL || (isProd ? 'https://mow.landmaarkdeveloper.com' : `http://localhost:${port}`);
+    const cleanBaseUrl = baseUrl.endsWith('/api') ? baseUrl : `${baseUrl}/api`;
 
-    return `${baseUrl}/uploads/${folder}/${fileName}`;
+    return `${cleanBaseUrl}/uploads/${folder}/${fileName}`;
   } catch (error) {
     logger.error('[LocalStorage] Error saving local file:', error);
     throw new Error('Failed to save uploaded file locally');
