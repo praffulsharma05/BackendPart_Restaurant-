@@ -45,6 +45,12 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus, ca
       } else if (status === 'Preparing') {
         title = ORDER_STRINGS.NOTIFICATIONS.PREPARING_TITLE;
         msg = ORDER_STRINGS.NOTIFICATIONS.PREPARING_BODY(orderId);
+      } else if (status === 'Ready') {
+        title = 'Order Ready 👨‍🍳';
+        msg = `Your order #${orderId.slice(0, 8).toUpperCase()} is prepared and ready!`;
+      } else if (status === 'Served') {
+        title = 'Order Served 🍽️';
+        msg = `Your order #${orderId.slice(0, 8).toUpperCase()} has been served. Enjoy your meal!`;
       } else if (status === 'Cancelled') {
         title = ORDER_STRINGS.NOTIFICATIONS.REJECTED_TITLE;
         msg = ORDER_STRINGS.NOTIFICATIONS.REJECTED_BODY(orderId, cancellationReason);
@@ -230,6 +236,27 @@ export async function updateOrderFulfillment(
     }
   }
 
-  return getOrderById(orderId);
+  const finalOrder = await getOrderById(orderId);
+  if (finalOrder && finalOrder.userId) {
+    try {
+      if (details.tableNumber) {
+        await notificationService.createNotification(
+          finalOrder.userId,
+          'Table Number Updated 🪑',
+          `Your seating table for order #${orderId.slice(0, 8).toUpperCase()} has been updated to ${details.tableNumber}.`,
+          'order'
+        );
+      } else if (details.carNumber) {
+        await notificationService.createNotification(
+          finalOrder.userId,
+          'Car Details Updated 🚗',
+          `Your vehicle details for order #${orderId.slice(0, 8).toUpperCase()} have been updated.`,
+          'order'
+        );
+      }
+    } catch (_notifErr) {}
+  }
+
+  return finalOrder;
 }
 

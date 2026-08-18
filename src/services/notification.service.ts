@@ -27,14 +27,7 @@ export const notificationService = {
    */
   async notifyAdmins(title: string, message: string, type: string = 'USER_EVENT') {
     try {
-      const [adminRows] = await dbPool.query<RowDataPacket[]>('SELECT id FROM users WHERE role = "ADMIN"');
-      if (adminRows.length === 0) {
-        console.warn('[NotificationService] No admin users found in database to notify');
-        return;
-      }
-      for (const admin of adminRows) {
-        await this.createNotification(admin.id, title, message, type);
-      }
+      await this.createNotification('ADMIN', title, message, type);
     } catch (err) {
       console.error('[NotificationService] Error notifying admins:', err);
     }
@@ -48,7 +41,7 @@ export const notificationService = {
   async getUserNotifications(userId: string, role?: string) {
     const isAdmin = role === 'ADMIN';
 
-    let sql = `SELECT * FROM notifications WHERE (user_id = ? OR user_id = "ALL") AND user_id != "ADMIN" AND type != "waiter-call" AND title != "Attendant Summoned"`;
+    let sql = `SELECT * FROM notifications WHERE (user_id = ? OR (user_id = "ALL" AND title NOT LIKE 'Request Marked as Done%')) AND user_id != "ADMIN" AND type NOT IN ('waiter-call', 'USER_LOGIN', 'USER_REGISTER', 'USER_EVENT') AND title NOT IN ('Attendant Summoned', 'User Logged In', 'New User Registered')`;
     const params: any[] = [userId];
 
     if (isAdmin) {
@@ -93,16 +86,36 @@ export const notificationService = {
       if (notif) {
         if (!notif.is_read) {
           await dbPool.query('UPDATE notifications SET is_read = TRUE WHERE id = ?', [id]);
-          const targetUser = (notif.user_id !== 'ADMIN' && notif.user_id !== 'ALL') ? notif.user_id : 'ALL';
-          const notifTitle = notif.title ? ` (Re: ${notif.title})` : '';
-          const body = customMessage || `Admin has attended to your request${notifTitle} and marked it as done.`;
           
-          await this.createNotification(
-            targetUser,
-            'Request Marked as Done 🛎️',
-            body,
-            'MESSAGE'
-          );
+          let targetUser = (notif.user_id && notif.user_id !== 'ADMIN' && notif.user_id !== 'ALL') ? notif.user_id : null;
+          
+          // If targetUser is not directly in notification (e.g. notification was sent to ADMIN),
+          // resolve the specific user from waiter_calls by location (Car or Dining Table)
+          if (!targetUser && notif.message) {
+            const match = notif.message.match(/Request at location:\s*(.+)/i);
+            const locationStr = match ? match[1].trim() : null;
+            if (locationStr) {
+              const [wRows] = await dbPool.query<RowDataPacket[]>(
+                'SELECT user_id FROM waiter_calls WHERE table_number = ? AND user_id IS NOT NULL AND user_id != "ADMIN" AND user_id != "ALL" ORDER BY created_at DESC LIMIT 1',
+                [locationStr]
+              );
+              if (wRows.length > 0 && wRows[0].user_id) {
+                targetUser = wRows[0].user_id;
+              }
+            }
+          }
+          
+          if (targetUser && targetUser !== 'ADMIN' && targetUser !== 'ALL') {
+            const notifTitle = notif.title ? ` (Re: ${notif.title})` : '';
+            const body = customMessage || `Admin has attended to your request${notifTitle} and marked it as done.`;
+            
+            await this.createNotification(
+              targetUser,
+              'Request Marked as Done 🛎️',
+              body,
+              'MESSAGE'
+            );
+          }
         }
         return { id, acknowledged: true };
       }
@@ -113,15 +126,19 @@ export const notificationService = {
       if (call) {
         if (call.status !== 'ATTENDED') {
           await dbPool.query('UPDATE waiter_calls SET status = ? WHERE id = ?', ['ATTENDED', id]);
-          const targetUser = call.user_id || 'ALL';
-          const tableText = call.table_number ? ` (${call.table_number})` : '';
-          const body = customMessage || `Restaurant staff has attended to your request${tableText} and marked it as done.`;
-          await this.createNotification(
-            targetUser,
-            'Request Marked as Done 🛎️',
-            body,
-            'MESSAGE'
-          );
+          
+          const targetUser = (call.user_id && call.user_id !== 'ADMIN' && call.user_id !== 'ALL') ? call.user_id : null;
+          
+          if (targetUser) {
+            const tableText = call.table_number ? ` (${call.table_number})` : '';
+            const body = customMessage || `Restaurant staff has attended to your request${tableText} and marked it as done.`;
+            await this.createNotification(
+              targetUser,
+              'Request Marked as Done 🛎️',
+              body,
+              'MESSAGE'
+            );
+          }
         }
         return { id, acknowledged: true };
       }

@@ -4,10 +4,10 @@ import { authenticate, optionalAuthenticate, authorizeRoles } from '../middlewar
 
 const router = Router();
 
-router.post('/call', waiterController.callWaiter);
+router.post('/call', optionalAuthenticate, waiterController.callWaiter);
 router.get('/pending', authenticate, authorizeRoles(['ADMIN', 'WAITER', 'KITCHEN']), waiterController.getPending);
-router.get('/:id/attend', optionalAuthenticate, waiterController.attendCall);
-router.patch('/:id/attend', optionalAuthenticate, waiterController.attendCall);
-router.post('/:id/attend', optionalAuthenticate, waiterController.attendCall);
+router.get('/:id/attend', authenticate, authorizeRoles(['ADMIN', 'WAITER', 'KITCHEN']), waiterController.attendCall);
+router.patch('/:id/attend', authenticate, authorizeRoles(['ADMIN', 'WAITER', 'KITCHEN']), waiterController.attendCall);
+router.post('/:id/attend', authenticate, authorizeRoles(['ADMIN', 'WAITER', 'KITCHEN']), waiterController.attendCall);
 
 export default router;
