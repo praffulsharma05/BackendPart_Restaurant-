@@ -1,4 +1,4 @@
-const BASE_URL = process.env.API_URL || 'http://localhost:5000/api';
+const BASE_URL = process.env.API_URL || 'https://mealsonwheels.landmaarkdeveloper.com/api';
 
 async function testCallWaiter() {
   try {

@@ -71,7 +71,7 @@ async function insertMenu() {
           4.8,
           'none',
           'Beverages',
-          'http://localhost:5000/images/thumpups.png',
+          'https://mealsonwheels.landmaarkdeveloper.com/images/thumpups.png',
           true,
           false,
           'AVAILABLE'
