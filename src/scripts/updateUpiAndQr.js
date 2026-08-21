@@ -2,8 +2,13 @@ const fs = require('fs');
 const mysql = require('mysql2/promise');
 require('dotenv').config();
 
+const path = require('path');
+
 async function updateDatabase() {
-  const imagePath = 'C:\\Users\\praff\\.gemini\\antigravity-ide\\brain\\f1238e98-947f-412e-86cc-0f6be491dc06\\media__1786089211023.png';
+  const imagePath = process.env.QR_CODE_IMAGE_PATH
+    ? path.resolve(__dirname, '../../', process.env.QR_CODE_IMAGE_PATH)
+    : path.resolve(__dirname, '../../public/images/upi_qr_code.png');
+
   let qrBase64 = '';
   if (fs.existsSync(imagePath)) {
     const buffer = fs.readFileSync(imagePath);
@@ -14,12 +19,20 @@ async function updateDatabase() {
     host: process.env.DB_HOST || '127.0.0.1',
     port: Number(process.env.DB_PORT) || 3306,
     user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || 'Pr@fful_213',
+    password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME || 'Restaurant',
   });
 
+  const upiId = process.env.ADMIN_UPI_ID;
+  const adminEmail = process.env.ADMIN_EMAIL;
+  const adminPhone = process.env.ADMIN_PHONE;
+
+  if (!upiId || !adminEmail || !adminPhone) {
+    console.error('❌ Error: ADMIN_UPI_ID, ADMIN_EMAIL, and ADMIN_PHONE must be set in .env');
+    return;
+  }
+
   try {
-    // Alter column to LONGTEXT if needed
     try {
       await pool.query('ALTER TABLE restaurant_info MODIFY COLUMN qr_payment_image_url LONGTEXT');
     } catch (_e) {}
@@ -29,18 +42,34 @@ async function updateDatabase() {
       const restId = rows[0].id;
       await pool.query(
         `UPDATE restaurant_info 
-         SET upi_id = ?, phone = ?, qr_payment_image_url = COALESCE(NULLIF(?, ''), qr_payment_image_url) 
+         SET upi_id = ?, qr_payment_image_url = COALESCE(NULLIF(?, ''), qr_payment_image_url) 
          WHERE id = ?`,
-        ['7878606937@ibl', '+917878606937', qrBase64, restId]
+        [upiId, qrBase64 || null, restId]
       );
-      console.log('✅ Successfully updated restaurant_info table with UPI ID 7878606937@ibl, Phone +917878606937, and PhonePe QR Code image!');
+      console.log(`✅ Successfully updated restaurant_info table with UPI ID ${upiId}!`);
     }
 
-    // Also update users table for admin phone
-    await pool.query(
-      `UPDATE users SET phone = '+917878606937' WHERE role = 'ADMIN' OR email = 'praffulsharma38@gmail.com'`
-    );
-    console.log('✅ Successfully updated admin user phone number to +917878606937 in users table!');
+    try {
+      await pool.query(
+        `UPDATE restaurants SET upi_id = ?, qr_payment_image_url = COALESCE(NULLIF(?, ''), qr_payment_image_url)`,
+        [upiId, qrBase64 || null]
+      );
+      console.log(`✅ Successfully updated restaurants table with UPI ID ${upiId}!`);
+    } catch (_e) {}
+
+    // Also update users table for admin email and phone from env variables
+    try {
+      await pool.query(
+        `UPDATE users SET email = ?, phone = ? WHERE role = 'ADMIN'`,
+        [adminEmail, adminPhone]
+      );
+    } catch (_e) {
+      await pool.query(
+        `UPDATE users SET phone = ? WHERE email = ?`,
+        [adminPhone, adminEmail]
+      );
+    }
+    console.log(`✅ Successfully updated admin user email (${adminEmail}) and phone (${adminPhone}) from environment!`);
 
   } catch (err) {
     console.error('❌ Error updating DB:', err.message);
@@ -50,3 +79,4 @@ async function updateDatabase() {
 }
 
 updateDatabase();
+

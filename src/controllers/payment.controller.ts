@@ -12,17 +12,20 @@ export const paymentController = {
   async getPaymentConfig(req: Request, res: Response) {
     try {
       const details = await restaurantService.getRestaurantDetails();
-      const upiId = process.env.ADMIN_UPI_ID || details.info.qrDetails.upiId || '';
-      const merchantName = process.env.ADMIN_MERCHANT_NAME || details.info.name || '';
+      const upiId = details.info.qrDetails?.upiId || process.env.ADMIN_UPI_ID || '';
+      const merchantName = details.info.name || process.env.ADMIN_MERCHANT_NAME || '';
+      const qrCodeImageUrl = details.info.qrDetails?.qrCodeImageUrl || '';
 
       res.status(200).json({
         upiId,
         merchantName,
+        qrCodeImageUrl,
       });
     } catch (_e) {
       res.status(200).json({
         upiId: process.env.ADMIN_UPI_ID || '',
         merchantName: process.env.ADMIN_MERCHANT_NAME || '',
+        qrCodeImageUrl: '',
       });
     }
   },
