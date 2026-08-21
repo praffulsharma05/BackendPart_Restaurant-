@@ -6,23 +6,23 @@ import { createAndSaveTokens } from './authTokens';
 export const PREDEFINED_ADMINS: Record<string, { name: string; phone: string; passwordHash: string; adminType: string }> = {
   ...(process.env.ADMIN_EMAIL
     ? {
-        [process.env.ADMIN_EMAIL.toLowerCase()]: {
-          name: process.env.ADMIN_NAME || 'Super Admin',
-          phone: process.env.ADMIN_PHONE || '',
-          passwordHash: bcrypt.hashSync(process.env.ADMIN_PASSWORD || '', 10),
-          adminType: process.env.ADMIN_TYPE || 'super_admin',
-        },
-      }
+      [process.env.ADMIN_EMAIL.toLowerCase()]: {
+        name: process.env.ADMIN_NAME || 'Super Admin',
+        phone: process.env.ADMIN_PHONE || '',
+        passwordHash: bcrypt.hashSync(process.env.ADMIN_PASSWORD || '', 10),
+        adminType: process.env.ADMIN_TYPE || 'super_admin',
+      },
+    }
     : {}),
   ...(process.env.DESIGNER_ADMIN_EMAIL
     ? {
-        [process.env.DESIGNER_ADMIN_EMAIL.toLowerCase()]: {
-          name: process.env.DESIGNER_ADMIN_NAME || 'Designer Jas',
-          phone: process.env.DESIGNER_ADMIN_PHONE || '',
-          passwordHash: bcrypt.hashSync(process.env.DESIGNER_ADMIN_PASSWORD || '', 10),
-          adminType: process.env.DESIGNER_ADMIN_TYPE || 'super_admin',
-        },
-      }
+      [process.env.DESIGNER_ADMIN_EMAIL.toLowerCase()]: {
+        name: process.env.DESIGNER_ADMIN_NAME || ' ',
+        phone: process.env.DESIGNER_ADMIN_PHONE || '',
+        passwordHash: bcrypt.hashSync(process.env.DESIGNER_ADMIN_PASSWORD || '', 10),
+        adminType: process.env.DESIGNER_ADMIN_TYPE || 'super_admin',
+      },
+    }
     : {}),
 };
 
