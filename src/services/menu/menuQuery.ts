@@ -31,6 +31,17 @@ export async function ensureColumnsExist() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
+    const [countRows]: any = await dbPool.query('SELECT COUNT(*) as count FROM master_customizations');
+    if (countRows && countRows[0] && Number(countRows[0].count) === 0) {
+      await dbPool.query(`
+        INSERT INTO master_customizations (id, name, price) VALUES
+        (UUID(), 'Half Plate', 0.00),
+        (UUID(), 'Full Plate', 0.00),
+        (UUID(), '250gm', 0.00),
+        (UUID(), '1/2 kg', 0.00),
+        (UUID(), '1kg', 0.00)
+      `);
+    }
   } catch {}
 }
 
