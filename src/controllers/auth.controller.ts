@@ -13,19 +13,20 @@ export const authController = {
    */
   async adminLogin(req: Request, res: Response, next: NextFunction) {
     try {
-      const { email, password } = req.body;
-      logger.info('[Auth] Admin login attempt', { email });
-      if (!email || !password) {
-        logger.warn('[Auth] Admin login failed: Missing email or password');
-        return sendError(res, 'Email and password are required', 400);
+      const { email, phone, identifier, password } = req.body;
+      const input = identifier || email || phone;
+      logger.info('[Auth] Admin login attempt', { input });
+      if (!input || !password) {
+        logger.warn('[Auth] Admin login failed: Missing email/phone or password');
+        return sendError(res, 'Email/Mobile number and password are required', 400);
       }
-      const result = await authService.adminLogin(email, password);
-      logger.info('[Auth] Admin login successful', { email });
+      const result = await authService.adminLogin(input, password);
+      logger.info('[Auth] Admin login successful', { input });
       return sendSuccess(res, 'Admin login successful', result);
     } catch (error: any) {
       logger.error('[Auth] Error in adminLogin:', error);
       if (error.message === 'Invalid email or password') {
-        return sendError(res, 'Invalid email or password', 401);
+        return sendError(res, 'Invalid email/phone or password', 401);
       }
       next(error);
     }
