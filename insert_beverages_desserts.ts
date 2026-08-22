@@ -101,7 +101,7 @@ async function insertMenu() {
           4.8,
           'none',
           'Beverages',
-          'http://localhost:5000/images/coca_cola.png',
+          'https://mealsonwheels.landmaarkdeveloper.com/images/coca_cola.png',
           true,
           false,
           'AVAILABLE'
@@ -131,7 +131,7 @@ async function insertMenu() {
           4.8,
           'none',
           'Desserts',
-          'http://localhost:5000/images/gulab_jamun.png',
+          'https://mealsonwheels.landmaarkdeveloper.com/images/gulab_jamun.png',
           true,
           false,
           'AVAILABLE'

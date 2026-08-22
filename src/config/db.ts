@@ -45,7 +45,7 @@ export async function testDbConnection(): Promise<boolean> {
   try {
     const connection = await dbPool.getConnection();
     console.log(`✅ Connected to MySQL Database (${process.env.DB_NAME || 'Restaurant'}) at ${process.env.DB_HOST || '127.0.0.1'}`);
-    
+
     // Reset all existing user reward points to 0 as requested and disable reward program
     try {
       await connection.query('UPDATE users SET reward_points = 0');
@@ -73,16 +73,19 @@ export async function testDbConnection(): Promise<boolean> {
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
       `);
-      
+
       const [tableCountRows]: any = await connection.query('SELECT COUNT(*) as count FROM restaurant_tables');
       if (tableCountRows && tableCountRows[0] && tableCountRows[0].count === 0) {
-        logger.info('[DB] Seeding restaurant_tables table with Table 1 to 30...');
-        for (let i = 1; i <= 30; i++) {
+        logger.info('[DB] Seeding restaurant_tables table with Table 1 to 15...');
+        for (let i = 1; i <= 15; i++) {
           await connection.query(
             'INSERT INTO restaurant_tables (id, table_number, status) VALUES (?, ?, ?)',
             [`t${i}`, `Table ${i}`, 'Available']
           );
         }
+      } else {
+        // Ensure only Table 1 to 15 exist if extra tables were created previously
+        await connection.query(`DELETE FROM restaurant_tables WHERE id IN ('t16','t17','t18','t19','t20','t21','t22','t23','t24','t25','t26','t27','t28','t29','t30')`);
       }
     } catch (tableErr: any) {
       logger.error('Failed to initialize restaurant_tables table:', tableErr.message || tableErr);
@@ -122,7 +125,7 @@ export async function testDbConnection(): Promise<boolean> {
         SET m.rating = r.calculated_avg
       `);
       logger.info('[DB] Synchronized menu_items.rating strictly with approved item-level reviews.');
-    } catch (_syncErr) {}
+    } catch (_syncErr) { }
 
     connection.release();
     return true;
