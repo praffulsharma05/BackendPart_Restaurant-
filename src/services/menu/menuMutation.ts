@@ -2,7 +2,7 @@ import { dbPool } from '../../config/db';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import { InventoryStatus } from '../../types';
 import { v4 as uuidv4 } from 'uuid';
-import { ensureColumnsExist, getMenuItemById } from './menuQuery';
+import { ensureColumnsExist, getMenuItemById, getVariantsByMenuItemId } from './menuQuery';
 import { DEFAULTS } from '../../constants';
 
 export async function createMenuItem(data: any) {
@@ -35,6 +35,18 @@ export async function createMenuItem(data: any) {
       opt.name,
       opt.price,
     ]);
+  }
+
+  // Save quantity variants if provided
+  const variants = data.variants || [];
+  for (const v of variants) {
+    if (v.name && v.price !== undefined) {
+      const vId = uuidv4();
+      await dbPool.query(
+        'INSERT INTO menu_item_variants (id, menu_item_id, variant_name, variant_price) VALUES (?, ?, ?, ?)',
+        [vId, id, v.name, Number(v.price)]
+      );
+    }
   }
 
   return getMenuItemById(id);
@@ -152,4 +164,51 @@ export async function deleteMasterCustomization(id: string) {
     [id]
   );
   return result.affectedRows > 0;
+}
+
+// ── Quantity Variant CRUD ──
+
+export async function addVariant(menuItemId: string, name: string, price: number) {
+  await ensureColumnsExist();
+  const id = uuidv4();
+  await dbPool.query(
+    'INSERT INTO menu_item_variants (id, menu_item_id, variant_name, variant_price) VALUES (?, ?, ?, ?)',
+    [id, menuItemId, name, Number(price)]
+  );
+  return { id, name, price: Number(price) };
+}
+
+export async function updateVariant(menuItemId: string, variantId: string, name: string, price: number) {
+  await ensureColumnsExist();
+  await dbPool.query(
+    'UPDATE menu_item_variants SET variant_name = ?, variant_price = ? WHERE id = ? AND menu_item_id = ?',
+    [name, Number(price), variantId, menuItemId]
+  );
+  return { id: variantId, name, price: Number(price) };
+}
+
+export async function deleteVariant(menuItemId: string, variantId: string) {
+  await ensureColumnsExist();
+  const [result] = await dbPool.query<ResultSetHeader>(
+    'DELETE FROM menu_item_variants WHERE id = ? AND menu_item_id = ?',
+    [variantId, menuItemId]
+  );
+  return result.affectedRows > 0;
+}
+
+export async function saveVariants(menuItemId: string, variants: { name: string; price: number }[]) {
+  await ensureColumnsExist();
+  // Delete all existing variants for this menu item
+  await dbPool.query('DELETE FROM menu_item_variants WHERE menu_item_id = ?', [menuItemId]);
+  // Insert new ones
+  for (const v of variants) {
+    if (v.name && v.price !== undefined) {
+      const id = uuidv4();
+      await dbPool.query(
+        'INSERT INTO menu_item_variants (id, menu_item_id, variant_name, variant_price) VALUES (?, ?, ?, ?)',
+        [id, menuItemId, v.name, Number(v.price)]
+      );
+    }
+  }
+  return getVariantsByMenuItemId(menuItemId);
 }

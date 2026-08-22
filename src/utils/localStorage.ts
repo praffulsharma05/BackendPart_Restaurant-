@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { logger } from './logger';
+import { API_CONFIG } from '../constants';
 
 /**
  * Saves an uploaded file buffer to the local disk in the uploads/<folder> directory.
@@ -25,12 +26,10 @@ export function saveLocalFile(fileBuffer: Buffer, originalName: string, folder: 
     fs.writeFileSync(filePath, fileBuffer);
     logger.info(`[LocalStorage] File saved successfully: ${filePath}`);
 
-    const isProd = process.env.NODE_ENV?.toLowerCase() === 'production';
-    const port = process.env.PORT || 5000;
-    const baseUrl = process.env.BASE_URL || 'https://mealsonwheels.landmaarkdeveloper.com';
-    const cleanBaseUrl = baseUrl.endsWith('/api') ? baseUrl.replace(/\/api$/, '') : baseUrl;
+    const cleanBaseUrl = API_CONFIG.BASE_URL.replace(/\/api\/?$/, '');
+    const prefix = API_CONFIG.UPLOADS_PREFIX.startsWith('/') ? API_CONFIG.UPLOADS_PREFIX : `/${API_CONFIG.UPLOADS_PREFIX}`;
 
-    return `${cleanBaseUrl}/uploads/${folder}/${fileName}`;
+    return `${cleanBaseUrl}${prefix}${folder}/${fileName}`;
   } catch (error) {
     logger.error('[LocalStorage] Error saving local file:', error);
     throw new Error('Failed to save uploaded file locally');

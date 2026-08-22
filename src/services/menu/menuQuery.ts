@@ -43,6 +43,19 @@ export async function ensureColumnsExist() {
       `);
     }
   } catch {}
+  try {
+    await dbPool.query(`
+      CREATE TABLE IF NOT EXISTS menu_item_variants (
+        id VARCHAR(36) PRIMARY KEY,
+        menu_item_id VARCHAR(100) NOT NULL,
+        variant_name VARCHAR(100) NOT NULL,
+        variant_price DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+        is_deleted BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_menu_item_id (menu_item_id)
+      )
+    `);
+  } catch {}  
 }
 
 export async function getAllMenuItems(
@@ -72,6 +85,38 @@ export async function getAllMenuItems(
 
   const [rows] = await dbPool.query<RowDataPacket[]>(sql, params);
   let items = rows.map((r) => mapRowToMenuItem(r));
+
+  try {
+    const [variants] = await dbPool.query<RowDataPacket[]>(
+      'SELECT id, menu_item_id, variant_name, variant_price FROM menu_item_variants WHERE is_deleted = FALSE ORDER BY variant_price ASC'
+    );
+    const variantMap = new Map<string, Array<{ id: string; name: string; price: number }>>();
+    for (const v of variants) {
+      const mId = String(v.menu_item_id);
+      if (!variantMap.has(mId)) {
+        variantMap.set(mId, []);
+      }
+      variantMap.get(mId)!.push({
+        id: v.id,
+        name: v.variant_name,
+        price: Number(v.variant_price),
+      });
+    }
+    for (const item of items) {
+      const vars = variantMap.get(String(item.id)) || [];
+      (item as any).variants = vars;
+      if ((Number(item.price) <= 0 || isNaN(Number(item.price))) && vars.length > 0) {
+        const validV = vars.map((v) => Number(v.price)).filter((p) => !isNaN(p) && p > 0);
+        if (validV.length > 0) {
+          item.price = Math.min(...validV);
+        }
+      }
+    }
+  } catch {
+    for (const item of items) {
+      (item as any).variants = [];
+    }
+  }
 
   if (filters) {
     items = applyBackendMenuFilters(items, filters);
@@ -129,6 +174,27 @@ export async function getMenuItemById(id: string) {
     price: Number(o.price),
   }));
 
+  // Fetch quantity variants
+  try {
+    const [variants] = await dbPool.query<RowDataPacket[]>(
+      'SELECT id, variant_name, variant_price FROM menu_item_variants WHERE menu_item_id = ? AND is_deleted = FALSE ORDER BY variant_price ASC',
+      [id]
+    );
+    item.variants = variants.map((v) => ({
+      id: v.id,
+      name: v.variant_name,
+      price: Number(v.variant_price),
+    }));
+    if ((Number(item.price) <= 0 || isNaN(Number(item.price))) && item.variants.length > 0) {
+      const validV = item.variants.map((v: any) => Number(v.price)).filter((p: number) => !isNaN(p) && p > 0);
+      if (validV.length > 0) {
+        item.price = Math.min(...validV);
+      }
+    }
+  } catch {
+    item.variants = [];
+  }
+
   return item;
 }
 
@@ -153,6 +219,19 @@ export async function getMasterCustomizations() {
     id: r.id,
     name: r.name,
     price: Number(r.price),
+  }));
+}
+
+export async function getVariantsByMenuItemId(menuItemId: string) {
+  await ensureColumnsExist();
+  const [rows] = await dbPool.query<RowDataPacket[]>(
+    'SELECT id, variant_name, variant_price FROM menu_item_variants WHERE menu_item_id = ? AND is_deleted = FALSE ORDER BY variant_price ASC',
+    [menuItemId]
+  );
+  return rows.map((r) => ({
+    id: r.id,
+    name: r.variant_name,
+    price: Number(r.variant_price),
   }));
 }
 

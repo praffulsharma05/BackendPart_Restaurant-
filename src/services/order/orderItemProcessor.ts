@@ -52,7 +52,24 @@ export async function processOrderItems(
       throw new Error(ORDER_STRINGS.ERRORS.SOLD_OUT(menuItem.name));
     }
 
-    const itemUnitPrice = Number(menuItem.price);
+    const inputUnitPrice = Number(itemInput.unitPrice !== undefined ? itemInput.unitPrice : itemInput.price);
+    let itemUnitPrice = !isNaN(inputUnitPrice) && inputUnitPrice > 0 ? inputUnitPrice : Number(menuItem.price);
+
+    if (isNaN(itemUnitPrice) || itemUnitPrice <= 0) {
+      try {
+        const [variantRows] = await connection.query<RowDataPacket[]>(
+          'SELECT variant_price FROM menu_item_variants WHERE menu_item_id = ? AND is_deleted = FALSE ORDER BY variant_price ASC LIMIT 1',
+          [menuItem.id]
+        );
+        if (variantRows.length > 0) {
+          itemUnitPrice = Number(variantRows[0].variant_price);
+        }
+      } catch (_varErr) {}
+    }
+
+    if (isNaN(itemUnitPrice)) {
+      itemUnitPrice = 0;
+    }
     let optionsTotal = 0;
     const selectedOptionsList: any[] = [];
 

@@ -35,4 +35,11 @@ router.post('/:id/customizations', authenticate, authorizeRoles(['ADMIN']), menu
 router.put('/:id/customizations/:customizationId', authenticate, authorizeRoles(['ADMIN']), menuController.updateCustomization);
 router.delete('/:id/customizations/:customizationId', authenticate, authorizeRoles(['ADMIN']), menuController.deleteCustomization);
 
+// Quantity Variant endpoints
+router.get('/:id/variants', menuController.getVariants);
+router.post('/:id/variants', authenticate, authorizeRoles(['ADMIN']), menuController.addVariant);
+router.put('/:id/variants/bulk', authenticate, authorizeRoles(['ADMIN']), menuController.saveVariants);
+router.put('/:id/variants/:variantId', authenticate, authorizeRoles(['ADMIN']), menuController.updateVariant);
+router.delete('/:id/variants/:variantId', authenticate, authorizeRoles(['ADMIN']), menuController.deleteVariant);
+
 export default router;

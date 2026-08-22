@@ -1,6 +1,7 @@
 import { dbPool } from '../../config/db';
 import { RowDataPacket } from 'mysql2';
 import { OrderStatus } from '../../types';
+import { normalizeImageUrl } from '../../utils/imageUrl';
 
 export async function getOrderById(orderId: string) {
   const [orders] = await dbPool.query<RowDataPacket[]>('SELECT * FROM orders WHERE id = ?', [orderId]);
@@ -31,21 +32,53 @@ export async function getOrderById(orderId: string) {
 
   // Get Line Items
   const [items] = await dbPool.query<RowDataPacket[]>('SELECT * FROM order_items WHERE order_id = ?', [orderId]);
+  let calculatedSubtotal = 0;
   const itemsList = await Promise.all(
     items.map(async (i) => {
       const [opts] = await dbPool.query<RowDataPacket[]>('SELECT option_name, option_price FROM order_item_options WHERE order_item_id = ?', [i.id]);
+      const mappedOptions = opts.map((o) => ({ name: o.option_name, price: Number(o.option_price) }));
+      const optionsTotal = mappedOptions.reduce((sum, o) => sum + (Number(o.price) || 0), 0);
+
+      let unitPrice = Number(i.unit_price);
+      if (unitPrice <= 0 && i.menu_item_id) {
+        try {
+          const [mRows] = await dbPool.query<RowDataPacket[]>('SELECT price FROM menu_items WHERE id = ?', [i.menu_item_id]);
+          if (mRows.length > 0 && Number(mRows[0].price) > 0) {
+            unitPrice = Number(mRows[0].price);
+          } else {
+            const [vRows] = await dbPool.query<RowDataPacket[]>(
+              'SELECT variant_price FROM menu_item_variants WHERE menu_item_id = ? AND is_deleted = FALSE ORDER BY variant_price ASC LIMIT 1',
+              [i.menu_item_id]
+            );
+            if (vRows.length > 0) {
+              unitPrice = Number(vRows[0].variant_price);
+            }
+          }
+        } catch (_err) {}
+      }
+
+      const qty = Number(i.quantity) || 1;
+      const itemSubtotal = Number(i.subtotal) > 0 ? Number(i.subtotal) : (unitPrice + optionsTotal) * qty;
+      calculatedSubtotal += itemSubtotal;
+
       return {
         id: i.id,
         menuItemId: i.menu_item_id,
         name: i.item_name,
-        unitPrice: Number(i.unit_price),
-        quantity: i.quantity,
-        subtotal: Number(i.subtotal),
+        unitPrice: unitPrice,
+        quantity: qty,
+        subtotal: itemSubtotal,
         customInstructions: i.custom_instructions || '',
-        options: opts.map((o) => ({ name: o.option_name, price: Number(o.option_price) })),
+        options: mappedOptions,
       };
     })
   );
+
+  const finalSubtotal = Number(order.subtotal) > 0 ? Number(order.subtotal) : calculatedSubtotal;
+  const finalDiscount = Number(order.discount) || 0;
+  const finalTax = Number(order.tax) || 0;
+  const finalServiceCharge = Number(order.service_charge) || 0;
+  const finalTotal = Number(order.total) > 0 ? Number(order.total) : Math.max(0, finalSubtotal - finalDiscount + finalTax + finalServiceCharge);
 
   return {
     id: order.id,
@@ -55,11 +88,11 @@ export async function getOrderById(orderId: string) {
     orderType: order.order_type || (fulfillmentDetails?.tableNumber ? 'Dine In' : fulfillmentDetails?.carNumber ? 'Car Order' : 'Pickup'),
     fulfillmentDetails: fulfillmentDetails || null,
     items: itemsList,
-    subtotal: Number(order.subtotal),
-    discount: Number(order.discount),
-    tax: Number(order.tax),
-    serviceCharge: Number(order.service_charge),
-    total: Number(order.total),
+    subtotal: finalSubtotal,
+    discount: finalDiscount,
+    tax: finalTax,
+    serviceCharge: finalServiceCharge,
+    total: finalTotal,
     rewardPointsEarned: order.reward_points_earned,
     rewardPointsUsed: order.reward_points_used,
     status: order.status as OrderStatus,
@@ -69,7 +102,7 @@ export async function getOrderById(orderId: string) {
     cancellationReason: order.cancellation_reason,
     createdAt: order.created_at,
     updatedAt: order.updated_at,
-    paymentScreenshotUrl: order.payment_screenshot_url,
+    paymentScreenshotUrl: normalizeImageUrl(order.payment_screenshot_url),
     orderToken: order.order_token,
     specialInstructions: order.special_instructions || '',
   };

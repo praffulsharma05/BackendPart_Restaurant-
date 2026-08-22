@@ -6,6 +6,7 @@ import {
   getMenuItemById,
   getCustomizationsByMenuItemId,
   getMasterCustomizations,
+  getVariantsByMenuItemId,
 } from './menu/menuQuery';
 import {
   createMenuItem,
@@ -21,6 +22,10 @@ import {
   addMasterCustomization,
   updateMasterCustomization,
   deleteMasterCustomization,
+  addVariant,
+  updateVariant,
+  deleteVariant,
+  saveVariants,
 } from './menu/menuMutation';
 
 export const menuService = {
@@ -44,4 +49,9 @@ export const menuService = {
   addMasterCustomization,
   updateMasterCustomization,
   deleteMasterCustomization,
+  getVariantsByMenuItemId,
+  addVariant,
+  updateVariant,
+  deleteVariant,
+  saveVariants,
 };

@@ -63,8 +63,7 @@ CREATE TABLE `customization_options` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
---
--- Dumping data for table `customization_options`
+---- Dumping data for table `customization_options`
 --
 
 LOCK TABLES `customization_options` WRITE;

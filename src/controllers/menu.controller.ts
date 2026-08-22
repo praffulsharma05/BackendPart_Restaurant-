@@ -78,7 +78,7 @@ export const menuController = {
 
   async updateInventoryStatus(req: Request, res: Response, next: NextFunction) {
     try {
-      const { status } = req.body; // 'AVAILABLE' | 'SOLD_OUT'
+      const { status } = req.body;
       logger.info('[Menu] Updating inventory status', { id: req.params.id, status });
       if (!['AVAILABLE', 'SOLD_OUT'].includes(status)) {
         logger.warn('[Menu] Invalid inventory status', { status });
@@ -167,12 +167,6 @@ export const menuController = {
     }
   },
 
-  /**
-   *
-   * @param req
-   * @param res
-   * @param next
-   */
   async getCustomizations(req: Request, res: Response, next: NextFunction) {
     try {
       logger.info('[Menu] Fetching customizations', { id: req.params.id });
@@ -184,12 +178,6 @@ export const menuController = {
     }
   },
 
-  /**
-   *
-   * @param req
-   * @param res
-   * @param next
-   */
   async addCustomization(req: Request, res: Response, next: NextFunction) {
     try {
       const { name, price } = req.body;
@@ -205,12 +193,6 @@ export const menuController = {
     }
   },
 
-  /**
-   *
-   * @param req
-   * @param res
-   * @param next
-   */
   async updateCustomization(req: Request, res: Response, next: NextFunction) {
     try {
       const { name, price } = req.body;
@@ -226,12 +208,6 @@ export const menuController = {
     }
   },
 
-  /**
-   *
-   * @param req
-   * @param res
-   * @param next
-   */
   async deleteCustomization(req: Request, res: Response, next: NextFunction) {
     try {
       logger.info('[Menu] Deleting customization', { id: req.params.id, customizationId: req.params.customizationId });
@@ -247,5 +223,73 @@ export const menuController = {
   addMasterCustomization: customizationController.addMasterCustomization,
   updateMasterCustomization: customizationController.updateMasterCustomization,
   deleteMasterCustomization: customizationController.deleteMasterCustomization,
-};
 
+  // Quantity Variant endpoints
+  async getVariants(req: Request, res: Response, next: NextFunction) {
+    try {
+      logger.info('[Menu] Fetching variants', { id: req.params.id });
+      const variants = await menuService.getVariantsByMenuItemId(req.params.id);
+      return sendSuccess(res, 'Variants retrieved successfully', variants);
+    } catch (error) {
+      logger.error('[Menu] Error in getVariants:', error);
+      next(error);
+    }
+  },
+
+  async addVariant(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { name, price } = req.body;
+      logger.info('[Menu] Adding variant', { id: req.params.id, name, price });
+      if (!name || price === undefined) {
+        return sendError(res, 'Variant name and price are required', 400);
+      }
+      const variant = await menuService.addVariant(req.params.id, name, Number(price));
+      return sendSuccess(res, 'Variant added successfully', variant, 201);
+    } catch (error) {
+      logger.error('[Menu] Error in addVariant:', error);
+      next(error);
+    }
+  },
+
+  async updateVariant(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { name, price } = req.body;
+      logger.info('[Menu] Updating variant', { id: req.params.id, variantId: req.params.variantId, name, price });
+      if (!name || price === undefined) {
+        return sendError(res, 'Variant name and price are required', 400);
+      }
+      const variant = await menuService.updateVariant(req.params.id, req.params.variantId, name, Number(price));
+      return sendSuccess(res, 'Variant updated successfully', variant);
+    } catch (error) {
+      logger.error('[Menu] Error in updateVariant:', error);
+      next(error);
+    }
+  },
+
+  async deleteVariant(req: Request, res: Response, next: NextFunction) {
+    try {
+      logger.info('[Menu] Deleting variant', { id: req.params.id, variantId: req.params.variantId });
+      const deleted = await menuService.deleteVariant(req.params.id, req.params.variantId);
+      if (!deleted) return sendError(res, 'Variant not found', 404);
+      return sendSuccess(res, 'Variant deleted successfully');
+    } catch (error) {
+      logger.error('[Menu] Error in deleteVariant:', error);
+      next(error);
+    }
+  },
+
+  async saveVariants(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { variants } = req.body;
+      logger.info('[Menu] Saving variants bulk', { id: req.params.id, count: variants?.length });
+      if (!Array.isArray(variants)) {
+        return sendError(res, 'Variants must be an array', 400);
+      }
+      const saved = await menuService.saveVariants(req.params.id, variants);
+      return sendSuccess(res, 'Variants saved successfully', saved);
+    } catch (error) {
+      logger.error('[Menu] Error in saveVariants:', error);
+      next(error);
+    }
+  },
+};

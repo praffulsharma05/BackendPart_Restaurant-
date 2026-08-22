@@ -1,32 +1,28 @@
+import { API_CONFIG } from '../constants';
+
 export function normalizeImageUrl(url?: string | null): string {
   if (!url) return '';
   if (typeof url !== 'string') return '';
   
   const trimmed = url.trim();
+  const baseUrl = API_CONFIG.BASE_URL.replace(/\/api\/?$/, '');
 
-  // If it's already an external absolute HTTP/HTTPS URL (e.g. Unsplash, Cloudinary, Bing, external S3)
-  // return it directly as-is!
+  // If it's an absolute URL (http:// or https://)
   if (/^https?:\/\//i.test(trimmed)) {
-    // If it's your own domain local upload path missing /api/uploads/
-    if (trimmed.includes('mealsonwheels.landmaarkdeveloper.com/uploads/') && !trimmed.includes('mealsonwheels.landmaarkdeveloper.com/api/uploads/')) {
-      return trimmed.replace('/uploads/', '/api/uploads/');
-    }
-    if (trimmed.includes('mow.landmaarkdeveloper.com/uploads/')) {
-      return trimmed.replace('mow.landmaarkdeveloper.com/uploads/', 'mealsonwheels.landmaarkdeveloper.com/api/uploads/');
-    }
-    if (trimmed.includes('mow.landmaarkdeveloper.com/api/uploads/')) {
-      return trimmed.replace('mow.landmaarkdeveloper.com/api/uploads/', 'mealsonwheels.landmaarkdeveloper.com/api/uploads/');
+    if (trimmed.includes(API_CONFIG.RELATIVE_UPLOADS_PREFIX) && !trimmed.includes(API_CONFIG.UPLOADS_PREFIX)) {
+      return trimmed.replace(API_CONFIG.RELATIVE_UPLOADS_PREFIX, API_CONFIG.UPLOADS_PREFIX);
     }
     return trimmed;
   }
 
-  // If it's a relative local upload path starting with /uploads/
-  if (trimmed.startsWith('/uploads/')) {
-    return `https://mealsonwheels.landmaarkdeveloper.com/api${trimmed}`;
+  // If it's a relative upload path starting with /uploads/
+  if (trimmed.startsWith(API_CONFIG.RELATIVE_UPLOADS_PREFIX)) {
+    return `${baseUrl}${API_CONFIG.API_PREFIX}${trimmed}`;
   }
 
-  if (trimmed.startsWith('/api/uploads/')) {
-    return `https://mealsonwheels.landmaarkdeveloper.com${trimmed}`;
+  // If it's a relative upload path starting with /api/uploads/
+  if (trimmed.startsWith(API_CONFIG.UPLOADS_PREFIX)) {
+    return `${baseUrl}${trimmed}`;
   }
 
   return trimmed;
